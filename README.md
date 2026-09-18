@@ -1,11 +1,12 @@
-# Hazewatch - Malaysia
+# Haze Watch — Malaysia
+
 **Live air quality for the Klang Valley and Penang, refreshed every five minutes.**
 
-During haze season the question is rarely "is the air bad?" — it's *how* bad, *where*, and *is it heading my way*. Haze Watch answers all three on one screen: current readings for six locations, the last 24 hours and the next 24 hours side by side, and the wind direction that decides whether smoke is about to arrive.
+During haze season the question is rarely "is the air bad?" — it's *how* bad, *where*, and *is it heading my way*. Haze Watch answers all three on one screen: measured readings from the nearest government monitoring station to each of six places, a five-day outlook, and the wind direction that decides whether smoke is about to arrive.
 
-It's a single HTML file. No build step, no dependencies, no server, no tracking, no API key.
+It's a single HTML file. No build step, no dependencies, no server, no tracking.
 
-![Haze Watch showing six Malaysian locations with US AQI readings, trend sparklines and wind direction](screenshot-light.png)
+![Haze Watch showing six Malaysian locations with measured US AQI readings, station attribution, five-day outlook bars and wind direction](screenshot-light.png)
 
 *Example view. Readings shown are illustrative. There's a [dark theme](screenshot-dark.png) too, and it follows your system setting by default.*
 
@@ -21,14 +22,14 @@ It's a single HTML file. No build step, no dependencies, no server, no tracking,
 
 For each location:
 
-- **US AQI** as the headline number, with its category and a 3-hour trend
+- **US AQI as measured** at the nearest DOE station, with its category and how far it sits from today's average
+- **The station itself** — named, with its distance, so a reading is never passed off as being taken where you are
 - **PM2.5 and PM10** concentrations in µg/m³
-- **Malaysian API** — an estimate, computed from the trailing 24-hour averages
+- **Malaysian API** — an estimate from the station's 24-hour average, using the DOE sub-index formulas
+- **A five-day outlook** — each day's forecast average with its min–max range
 - **Wind direction and speed**, with a **Sumatra track** flag when the wind is arriving from the bearing sector that carries transboundary smoke
-- **A 48-hour sparkline** — solid for observed, dashed for forecast, hover for any hour
-- **Modelled visibility**, which often drops before the numbers climb
 
-A **Compare** tab puts all six on one chart with your alert threshold drawn across it, plus the same data as a sortable table.
+A **Compare** tab puts all six locations' outlooks on one chart with your alert threshold drawn across it, plus current readings as a table.
 
 ## Alerts
 
@@ -57,13 +58,17 @@ Desktop notifications require `https`, which is what GitHub Pages provides. Open
 
 ---
 
-## Data source, and its limits
+## Data sources, and their limits
 
-Air quality and weather come from [Open-Meteo](https://open-meteo.com/), which serves the **CAMS** atmospheric model — satellite observation blended with simulation on a grid of roughly 11 km. It is free, needs no API key, and is well suited to seeing an episode coming and to comparing one town against another.
+Current readings are **measurements**, not simulation. They come from Malaysia's Department of Environment monitoring stations — the same instruments [APIMS](https://apims.doe.gov.my/public_v2/api_table.html) publishes from — delivered through the [World Air Quality Index](https://aqicn.org/api/) project's API.
 
-It is **not** a sensor on any particular street, and it should not be treated as one. For the official figure that health advisories and school closures are based on, see the Department of Environment's [APIMS station readings](https://apims.doe.gov.my/public_v2/api_table.html).
+The honest caveat is distance, not accuracy. A station is never in your exact spot: Seremban's sits under 3 km from the town centre, while the nearest station to Semenyih is 15 km away in Nilai. Air quality varies over that distance. Every card names its station and the gap, so you can judge how much to trust it.
 
-The Malaysian API figure shown here is this project's own estimate. It applies the DOE's published PM2.5 and PM10 [sub-index formulas](https://www.doe.gov.my/wp-content/uploads/2021/09/API_Calculation.pdf) to the trailing 24-hour modelled averages and takes the higher of the two. It is not an official DOE number and will not match APIMS exactly.
+The **five-day outlook is a forecast** and the only modelled figure here.
+
+Wind, visibility and humidity come from [Open-Meteo](https://open-meteo.com/), where a physics model is the right tool and ground sensors can't help.
+
+An earlier version of this project ran entirely on a forecast model. During an active episode it read roughly half what the DOE stations were measuring — which is why it doesn't any more. If you fork this, resist the temptation to put a modelled number where people expect a measured one.
 
 Nothing here is medical advice. If you have a respiratory or cardiac condition, follow your doctor's guidance and the official advisories, not a webpage.
 
@@ -72,6 +77,8 @@ Nothing here is medical advice. If you have a respiratory or cardiac condition, 
 ## Running your own copy
 
 **Locally** — download `index.html` and open it in a browser. That's the whole installation.
+
+**Note on the API token.** The WAQI token sits in plain sight in `index.html`. That's how the API is designed to be used — it's rate-limited per token and carries no account access — but if you fork this, [request your own free token](https://aqicn.org/data-platform/token/) rather than reusing the one in here.
 
 **On GitHub Pages** — fork this repository, then go to **Settings → Pages**, set the source to **Deploy from a branch**, pick `main` and the root folder, and save. A minute later your copy is live at `https://YOUR-USERNAME.github.io/REPO-NAME/`.
 
@@ -91,20 +98,23 @@ Edit the `LOCATIONS` array near the top of the `<script>` block in `index.html`:
   lat:4.5975, lon:101.0901 }
 ```
 
+Each location also needs a `uid` — the WAQI station id it reads from. Find one by searching [aqicn.org](https://aqicn.org/) for a city and taking the number from its station URL, or by querying `https://api.waqi.info/map/bounds/?latlng=<lat1>,<lng1>,<lat2>,<lng2>&token=<your token>`, which lists every station in a box with its `uid`.
+
 `area` groups cards under a heading and selects which wind sector counts as the Sumatra track — add a new entry to `SUMATRA_ARC` if you add a region. Up to eight locations render with distinct, colourblind-checked series colours.
 
 ## Technical notes
 
-- One file, roughly 1,300 lines, vanilla JavaScript — no framework, no bundler, no `node_modules`
+- One file, roughly 1,200 lines, vanilla JavaScript — no framework, no bundler, no `node_modules`
 - Charts are hand-rolled inline SVG with hover crosshairs and tooltips
 - Light and dark themes are both hand-picked rather than auto-inverted, and the series palette is validated for colourblind separation
 - Fetches carry no `AbortSignal`, so the page also works inside sandboxed viewers that proxy `fetch` through `postMessage`
+- The station feed publishes AQI sub-indices rather than concentrations, so PM2.5 and PM10 in µg/m³ are recovered by running the EPA breakpoints in reverse
 - Settings live in the visitor's own `localStorage`, wrapped so that blocked storage degrades instead of breaking
-- No analytics, no cookies, no third-party scripts. The only outbound requests are to Open-Meteo.
+- No analytics, no cookies, no third-party scripts. The only outbound requests are to WAQI and Open-Meteo.
 
 ## Credits
 
-Data by [Open-Meteo](https://open-meteo.com/), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Weather model data from the Copernicus Atmosphere Monitoring Service (CAMS).
+Air quality measurements by the Malaysian Department of Environment, served through the [World Air Quality Index](https://waqi.info/) project. Weather data by [Open-Meteo](https://open-meteo.com/), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 ## License
 
