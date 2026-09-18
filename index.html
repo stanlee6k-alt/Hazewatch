@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Haze Watch — Malaysia</title>
+<meta name="description" content="Live air quality for Kuala Lumpur, Semenyih, Seremban and Penang. US AQI, PM2.5, PM10 and the wind direction that carries haze in. Refreshes every five minutes.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Haze Watch — Malaysia">
+<meta property="og:description" content="Live air quality for Kuala Lumpur, Semenyih, Seremban and Penang — refreshed every five minutes.">
+<meta property="og:image" content="og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e07b39'/%3E%3Cg stroke='%23fff' stroke-width='2.6' stroke-linecap='round' fill='none' opacity='.95'%3E%3Cpath d='M7 12h13'/%3E%3Cpath d='M7 17h18'/%3E%3Cpath d='M7 22h11'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --surface-2:   #f2f1ec;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --muted:       #898781;
+    --grid:        #e1e0d9;
+    --axis:        #c3c2b7;
+    --border:      rgba(11,11,11,0.10);
+    --shadow:      0 1px 2px rgba(11,11,11,0.05), 0 4px 16px rgba(11,11,11,0.04);
+
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+
+    --b-good:#0ca30c;  --b-good-fg:#04240a;
+    --b-mod:#fab219;   --b-mod-fg:#2b1d00;
+    --b-usg:#e07b39;   --b-usg-fg:#2a1200;
+    --b-unh:#d03b3b;   --b-unh-fg:#ffffff;
+    --b-vun:#7c4dcc;   --b-vun-fg:#ffffff;
+    --b-haz:#8c2a2a;   --b-haz-fg:#ffffff;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:#0d0d0d; --surface:#1a1a19; --surface-2:#242422;
+      --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+      --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+      --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:#0d0d0d; --surface:#1a1a19; --surface-2:#242422;
+    --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,0.10);
+    --shadow: 0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 0 16px 56px;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  header {
+    display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
+    padding: 22px 0 14px;
+  }
+  h1 { font-size: 21px; font-weight: 640; margin:0; letter-spacing:-0.01em; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
+  .spacer { flex: 1 1 auto; }
+  .hdr-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  .live { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2); }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--b-good); flex:none; }
+  .dot.pulse { animation: pulse 2s ease-in-out infinite; }
+  .dot.stale { background: var(--b-mod); animation:none; }
+  .dot.down  { background: var(--b-unh); animation:none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  @media (prefers-reduced-motion: reduce) { .dot.pulse { animation: none; } }
+
+  button, select {
+    font: inherit; font-size: 13px; color: var(--ink);
+    background: var(--surface); border:1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; cursor: pointer;
+  }
+  button:hover, select:hover { background: var(--surface-2); }
+  button:focus-visible, select:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+  button.primary { background: var(--s1); border-color: var(--s1); color:#fff; font-weight:560; }
+  button.primary:hover { filter: brightness(1.08); }
+  label.field { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-2); }
+
+  .tabs { display:inline-flex; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:2px; gap:2px; }
+  .tabs button { border:none; background:transparent; border-radius:7px; padding:5px 13px; color:var(--ink-2); }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); font-weight:580; box-shadow: var(--shadow); }
+
+  /* ---------- alert banner ---------- */
+  .banner {
+    display:flex; gap:12px; align-items:flex-start;
+    border-radius: 12px; padding: 13px 15px; margin-bottom: 18px;
+    border:1px solid var(--border); background: var(--surface); box-shadow: var(--shadow);
+  }
+  .banner .icon { font-size:18px; line-height:1.2; flex:none; }
+  .banner .btitle { font-weight:600; font-size:14px; }
+  .banner .bbody { color: var(--ink-2); font-size:13px; margin-top:2px; }
+  .banner[data-sev="alert"] { border-left: 4px solid var(--b-unh); }
+  .banner[data-sev="watch"] { border-left: 4px solid var(--b-mod); }
+  .banner[data-sev="clear"] { border-left: 4px solid var(--b-good); }
+  .banner[data-sev="error"] { border-left: 4px solid var(--b-unh); }
+
+  /* ---------- cards ---------- */
+  .group-label {
+    font-size:11.5px; font-weight:650; letter-spacing:0.07em; text-transform:uppercase;
+    color: var(--muted); margin: 22px 0 10px;
+  }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(322px, 1fr)); gap: 14px; }
+
+  .card {
+    background: var(--surface); border:1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); overflow:hidden; position:relative;
+  }
+  .card::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background: var(--band, var(--axis)); }
+  .card-in { padding: 15px 16px 12px 18px; }
+
+  .c-top { display:flex; align-items:flex-start; gap:12px; }
+  .c-name { font-weight:620; font-size:15.5px; letter-spacing:-0.005em; }
+  .c-where { color: var(--muted); font-size:11.5px; margin-top:2px; }
+
+  .aqi-wrap { margin-left:auto; text-align:right; flex:none; }
+  .aqi-num { font-size: 40px; font-weight: 680; line-height:1; letter-spacing:-0.03em; }
+  .aqi-cap { font-size:10.5px; color: var(--muted); letter-spacing:0.05em; text-transform:uppercase; margin-top:3px; }
+
+  .pill {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12px; font-weight:620; padding: 3px 9px; border-radius: 999px;
+    background: var(--band); color: var(--band-fg); margin-top:9px;
+  }
+  .trend { font-size:12px; color: var(--ink-2); margin-top:8px; display:flex; align-items:center; gap:5px; }
+  .trend b { font-weight:600; color:var(--ink); }
+
+  .spark { margin: 12px 0 2px; position:relative; }
+  .spark svg { display:block; width:100%; height:62px; }
+  .spark-ax { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:1px; }
+
+  .stats { display:grid; grid-template-columns: repeat(3, 1fr); gap:1px; background: var(--border); border-top:1px solid var(--border); }
+  .stat { background: var(--surface); padding: 9px 12px; }
+  .stat .k { font-size:10px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase; }
+  .stat .v { font-size:14.5px; font-weight:600; margin-top:2px; font-variant-numeric: tabular-nums; }
+  .stat .v small { font-weight:450; color:var(--muted); font-size:11px; }
+
+  .wind { display:flex; align-items:center; gap:8px; padding: 10px 12px 11px 16px; border-top:1px solid var(--border); font-size:12.5px; color: var(--ink-2); min-height:44px; }
+  .arrow { width:20px; height:20px; flex:none; color: var(--ink-2); }
+  .wind b { color: var(--ink); font-weight:600; }
+  .wind .w1 { white-space:nowrap; }
+  .wind .w2 { margin-left:auto; color:var(--muted); white-space:nowrap; font-size:11.5px; overflow:hidden; text-overflow:ellipsis; }
+  .track { display:inline-block; font-size:10.5px; font-weight:620; padding:1px 6px; border-radius:999px;
+           background:var(--surface-2); color:var(--ink); border:1px solid var(--border); white-space:nowrap; }
+
+  /* ---------- compare view ---------- */
+  .panel { background: var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); padding: 16px 18px 14px; }
+  .panel h2 { font-size:15px; font-weight:620; margin:0 0 2px; }
+  .panel .psub { font-size:12.5px; color: var(--muted); margin-bottom: 14px; }
+  #cmp { width:100%; display:block; }
+  .legend { display:flex; flex-wrap:wrap; gap: 6px 18px; margin-top: 12px; }
+  .lg { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink-2); cursor:pointer; user-select:none; }
+  .lg .sw { width:11px; height:11px; border-radius:3px; flex:none; }
+  .lg[data-off="1"] { opacity:.38; }
+
+  table.tbl { width:100%; border-collapse: collapse; font-size:13px; margin-top: 4px; }
+  table.tbl th { text-align:left; font-size:10.5px; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); font-weight:600; padding: 7px 10px; border-bottom:1px solid var(--border); }
+  table.tbl td { padding: 9px 10px; border-bottom:1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  table.tbl td:first-child { font-variant-numeric: normal; font-weight:560; }
+  table.tbl tr:last-child td { border-bottom:none; }
+  .tag { display:inline-block; font-size:11px; font-weight:620; padding:2px 7px; border-radius:999px; white-space:nowrap; }
+  table.tbl td, table.tbl th { white-space:nowrap; }
+
+  /* ---------- tooltip ---------- */
+  .tip {
+    position: fixed; z-index: 50; pointer-events:none; opacity:0; transition: opacity .09s;
+    background: var(--surface); color: var(--ink); border:1px solid var(--border);
+    border-radius:9px; box-shadow: 0 6px 24px rgba(0,0,0,0.18); padding: 8px 11px;
+    font-size:12px; line-height:1.45; min-width: 132px; font-variant-numeric: tabular-nums;
+  }
+  .tip.on { opacity:1; }
+  .tip .tt { font-size:11px; color:var(--muted); margin-bottom:3px; }
+  .tip .tr { display:flex; align-items:center; gap:7px; justify-content:space-between; }
+  .tip .tr .nm { display:flex; align-items:center; gap:6px; color:var(--ink-2); }
+  .tip .tr .sw { width:9px; height:9px; border-radius:2px; flex:none; }
+  .tip .tr b { font-weight:620; }
+
+  /* ---------- settings ---------- */
+  dialog {
+    border:1px solid var(--border); border-radius:14px; background:var(--surface); color:var(--ink);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.28); padding: 20px 22px; max-width: 420px; width: calc(100% - 32px);
+  }
+  dialog::backdrop { background: rgba(0,0,0,0.42); }
+  dialog h3 { margin:0 0 4px; font-size:16px; font-weight:620; }
+  dialog .dsub { color:var(--muted); font-size:12.5px; margin-bottom:16px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding: 9px 0; border-top:1px solid var(--grid); }
+  .row:first-of-type { border-top:none; }
+  .row .rl { font-size:13.5px; }
+  .row .rd { font-size:11.5px; color:var(--muted); margin-top:1px; max-width: 230px; }
+  .note { font-size:11.5px; color:var(--muted); background:var(--surface-2); border-radius:8px; padding:9px 11px; margin-top:14px; line-height:1.5; }
+
+  .guide { margin-top: 24px; }
+  .scale { display:flex; gap:2px; margin: 12px 0 2px; border-radius:9px; overflow:hidden; }
+  .sc { flex:1 1 0; background: var(--c); color: var(--f); padding: 8px 9px; min-width:0; }
+  .sc b { display:block; font-size:12.5px; font-weight:680; font-variant-numeric: tabular-nums; }
+  .sc span { display:block; font-size:10.5px; margin-top:1px; opacity:.88; line-height:1.25; }
+  @media (max-width: 720px) { .scale { flex-wrap:wrap; } .sc { flex: 1 1 32%; } }
+
+  .guide details { margin-top: 16px; border-top:1px solid var(--grid); padding-top: 12px; }
+  .guide summary { cursor:pointer; font-size:13.5px; font-weight:580; color:var(--ink-2); list-style:none; display:flex; align-items:center; gap:7px; }
+  .guide summary::-webkit-details-marker { display:none; }
+  .guide summary::before { content:"▸"; color:var(--muted); transition: transform .15s; }
+  .guide details[open] summary::before { transform: rotate(90deg); }
+  .gbody { font-size:13.5px; color:var(--ink-2); line-height:1.62; max-width: 74ch; }
+  .gbody p { margin: 12px 0 0; }
+  .gbody b { color: var(--ink); font-weight:600; }
+
+  .toast {
+    position: fixed; left:50%; bottom: 26px; transform: translateX(-50%) translateY(8px);
+    background: var(--ink); color: var(--page); font-size:13px; font-weight:540;
+    padding: 9px 16px; border-radius: 999px; opacity:0; pointer-events:none;
+    transition: opacity .16s, transform .16s; z-index: 60;
+  }
+  .toast.on { opacity:1; transform: translateX(-50%) translateY(0); }
+
+  footer { margin-top: 30px; padding-top: 16px; border-top:1px solid var(--grid); font-size:11.5px; color:var(--muted); line-height:1.6; }
+  footer a { color: var(--ink-2); }
+  .hide { display:none !important; }
+  @media (max-width: 560px) { .aqi-num { font-size:34px; } h1 { font-size:19px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>Haze Watch — Malaysia</h1>
+    <div class="sub" id="sub">Klang Valley &amp; Penang · US AQI · auto-refreshing</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="hdr-tools">
+    <span class="live"><span class="dot pulse" id="dot"></span><span id="liveTxt">starting…</span></span>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabNow" aria-selected="true">Now</button>
+      <button role="tab" id="tabCmp" aria-selected="false">Compare</button>
+    </div>
+    <button id="btnRefresh" title="Refresh now">Refresh</button>
+    <button id="btnShare" title="Copy or share the link to this page">Share</button>
+    <button id="btnTheme" title="Toggle light / dark">◐</button>
+    <button id="btnSet" title="Settings">Settings</button>
+  </div>
+</header>
+
+<div class="banner" id="banner" data-sev="clear">
+  <div class="icon" id="bIcon">•</div>
+  <div>
+    <div class="btitle" id="bTitle">Connecting…</div>
+    <div class="bbody" id="bBody">Fetching the first reading for all six locations.</div>
+  </div>
+</div>
+
+<section id="viewNow">
+  <div id="groups"></div>
+</section>
+
+<section id="viewCmp" class="hide">
+  <div class="panel">
+    <h2>US AQI — past 24 hours and next 24 hours</h2>
+    <div class="psub">Hourly. The vertical marker is now; everything to its right is forecast.</div>
+    <svg id="cmp" role="img" aria-label="Line chart comparing hourly US AQI across six Malaysian locations"></svg>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="panel" style="margin-top:14px">
+    <h2>Current readings</h2>
+    <div class="psub">Same data as the chart, as a table.</div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="tbl">
+        <thead><tr>
+          <th>Location</th><th>US AQI</th><th>Category</th><th>PM2.5</th><th>PM10</th>
+          <th>MY API<span title="Estimated" style="cursor:help">*</span></th><th>Wind</th><th>3h trend</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="panel guide">
+  <h2>How to read this</h2>
+  <div class="scale" role="img" aria-label="US AQI scale from Good at 0 to Hazardous above 300">
+    <div class="sc" style="--c:var(--b-good); --f:var(--b-good-fg)"><b>0–50</b><span>Good</span></div>
+    <div class="sc" style="--c:var(--b-mod);  --f:var(--b-mod-fg)"><b>51–100</b><span>Moderate</span></div>
+    <div class="sc" style="--c:var(--b-usg);  --f:var(--b-usg-fg)"><b>101–150</b><span>Unhealthy — sensitive</span></div>
+    <div class="sc" style="--c:var(--b-unh);  --f:var(--b-unh-fg)"><b>151–200</b><span>Unhealthy</span></div>
+    <div class="sc" style="--c:var(--b-vun);  --f:var(--b-vun-fg)"><b>201–300</b><span>Very Unhealthy</span></div>
+    <div class="sc" style="--c:var(--b-haz);  --f:var(--b-haz-fg)"><b>301+</b><span>Hazardous</span></div>
+  </div>
+
+  <details>
+    <summary>What the numbers mean, and what they don't</summary>
+    <div class="gbody">
+      <p><b>The big number is the US AQI</b>, driven mostly by PM2.5 — the fine particles that make haze visible and that get deep into your lungs. Below 50 the air is clean. Past 100, people with asthma, heart conditions, and young children should ease off outdoor exertion. Past 150 it's worth everyone cutting outdoor time and closing up indoors. Past 200, stay in.</p>
+
+      <p><b>Malaysia's own API will usually read lower than the US AQI for the same air.</b> That isn't an error in either number. Malaysia's "Moderate" band runs up to 75.5 µg/m³ of PM2.5 where the US band stops at 35.4, so a day the DOE calls Moderate can be Unhealthy on the US scale. Both are shown here so you can see the gap rather than be surprised by it.</p>
+
+      <p><b>Watch the wind, not just the number.</b> Malaysia's worst haze usually blows in rather than building up locally. When a location's wind is arriving from the sector that points back at Sumatra, it carries a <span class="track">Sumatra track</span> tag — often hours before the reading climbs.</p>
+
+      <p><b>This is a forecast model, not a sensor on your street.</b> The figures come from Open-Meteo's CAMS atmospheric model, which blends satellite observation with simulation on a grid of roughly 11 km. It's excellent for seeing a haze episode coming and for comparing one town against another. For an official number — the one advisories and school closures are based on — check the Department of Environment's APIMS stations, linked below.</p>
+    </div>
+  </details>
+</section>
+
+<footer>
+  Air quality and weather from the <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> CAMS model — modelled/interpolated, not a physical sensor at each point.
+  Treat it as an early signal, and check <a href="https://apims.doe.gov.my/public_v2/api_table.html" target="_blank" rel="noopener">DOE APIMS</a> for Malaysia's official station readings.
+  <br>* MY API is this tool's estimate of Malaysia's Air Pollutant Index, computed from the trailing 24-hour PM2.5 and PM10 averages using the DOE sub-index formulas. It is not an official DOE figure.
+  <span id="ftr"></span>
+</footer>
+
+</div>
+
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<dialog id="dlg">
+  <h3>Settings</h3>
+  <div class="dsub">Saved in this browser.</div>
+
+  <div class="row">
+    <div><div class="rl">Refresh every</div><div class="rd">The upstream model updates hourly; 5 min keeps you close to it.</div></div>
+    <select id="setEvery">
+      <option value="1">1 min</option><option value="5">5 min</option>
+      <option value="10">10 min</option><option value="15">15 min</option><option value="30">30 min</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <div><div class="rl">Alert above US AQI</div><div class="rd">Fires when a location crosses this, and again hourly while it stays there.</div></div>
+    <select id="setThresh">
+      <option value="51">51 · Moderate</option>
+      <option value="101">101 · Unhealthy (sensitive)</option>
+      <option value="151">151 · Unhealthy</option>
+      <option value="201">201 · Very Unhealthy</option>
+      <option value="301">301 · Hazardous</option>
+    </select>
+  </div>
+
+  <div class="row">
+    <div><div class="rl">Desktop notifications</div><div class="rd" id="notifState">—</div></div>
+    <button id="setNotif">Enable</button>
+  </div>
+
+  <div class="row">
+    <div><div class="rl">Audible chime</div><div class="rd">Two short beeps on a crossing. Off by default.</div></div>
+    <button id="setChime">Off</button>
+  </div>
+
+  <div class="row">
+    <div><div class="rl">Sort worst first</div><div class="rd">Otherwise keeps the Klang Valley / Penang grouping.</div></div>
+    <button id="setSort">Off</button>
+  </div>
+
+  <div class="note" id="notifNote"></div>
+
+  <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+    <button class="primary" id="setClose">Done</button>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+
+/* ============================ config ============================ */
+
+const LOCATIONS = [
+  { id:"kl",  name:"Kuala Lumpur",  short:"KL",          where:"Federal Territory · city centre", area:"Klang Valley & Negeri Sembilan", lat:3.1390, lon:101.6869 },
+  { id:"sem", name:"Semenyih",      short:"Semenyih",    where:"Selangor · Hulu Langat",          area:"Klang Valley & Negeri Sembilan", lat:2.9560, lon:101.8430 },
+  { id:"ser", name:"Seremban",      short:"Seremban",    where:"Negeri Sembilan",                 area:"Klang Valley & Negeri Sembilan", lat:2.7258, lon:101.9424 },
+  { id:"geo", name:"Georgetown",    short:"G'town",      where:"Pulau Pinang · island north-east", area:"Pulau Pinang", lat:5.4141, lon:100.3288 },
+  { id:"bly", name:"Bayan Lepas",   short:"B. Lepas",    where:"Pulau Pinang · island south",      area:"Pulau Pinang", lat:5.2971, lon:100.2769 },
+  { id:"bmt", name:"Bukit Mertajam",short:"B. Mertajam", where:"Pulau Pinang · Seberang Perai",    area:"Pulau Pinang", lat:5.3632, lon:100.4667 }
+];
+const AREAS = ["Klang Valley & Negeri Sembilan", "Pulau Pinang"];
+const SERIES = ["--s1","--s2","--s3","--s4","--s5","--s6"];
+
+const AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const WX_URL = "https://api.open-meteo.com/v1/forecast";
+
+const BANDS = [
+  { max:50,   key:"good", label:"Good",                      bg:"--b-good", fg:"--b-good-fg", icon:"●" },
+  { max:100,  key:"mod",  label:"Moderate",                  bg:"--b-mod",  fg:"--b-mod-fg",  icon:"●" },
+  { max:150,  key:"usg",  label:"Unhealthy — sensitive",     bg:"--b-usg",  fg:"--b-usg-fg",  icon:"▲" },
+  { max:200,  key:"unh",  label:"Unhealthy",                 bg:"--b-unh",  fg:"--b-unh-fg",  icon:"▲" },
+  { max:300,  key:"vun",  label:"Very Unhealthy",            bg:"--b-vun",  fg:"--b-vun-fg",  icon:"■" },
+  { max:1e9,  key:"haz",  label:"Hazardous",                 bg:"--b-haz",  fg:"--b-haz-fg",  icon:"■" }
+];
+const MY_BANDS = [
+  { max:50,  label:"Good" }, { max:100, label:"Moderate" }, { max:200, label:"Unhealthy" },
+  { max:300, label:"Very Unhealthy" }, { max:1e9, label:"Hazardous" }
+];
+
+function band(aqi){ for (const b of BANDS) if (aqi <= b.max) return b; return BANDS[BANDS.length-1]; }
+function myBand(v){ for (const b of MY_BANDS) if (v <= b.max) return b.label; return "Hazardous"; }
+
+/* ============================ settings ============================ */
+
+const DEFAULTS = { every:5, thresh:101, chime:false, sort:false, theme:"auto", hidden:[] };
+let S = Object.assign({}, DEFAULTS);
+
+function loadSettings(){
+  try {
+    const raw = localStorage.getItem("hazewatch.v1");
+    if (raw) S = Object.assign({}, DEFAULTS, JSON.parse(raw));
+  } catch (e) { /* file:// or blocked storage — run with defaults */ }
+  if (!Array.isArray(S.hidden)) S.hidden = [];
+}
+function saveSettings(){
+  try { localStorage.setItem("hazewatch.v1", JSON.stringify(S)); } catch (e) {}
+}
+
+/* ============================ index maths ============================ */
+
+// Malaysia DOE PM2.5 sub-index (24-hour average, µg/m³)
+function myPM25(c){
+  if (c == null || !isFinite(c)) return null;
+  if (c <= 12.0)  return 4.1667 * c;
+  if (c <= 75.5)  return 0.7741 * (c - 12.1) + 51;
+  if (c <= 150.4) return 1.3218 * (c - 75.5) + 101;
+  if (c <= 250.4) return 0.9909 * (c - 150.5) + 201;
+  if (c <= 350.4) return 0.9909 * (c - 250.5) + 301;
+  if (c <= 500.4) return 0.6604 * (c - 350.5) + 401;
+  return 500;
+}
+// Malaysia DOE PM10 sub-index (24-hour average, µg/m³)
+function myPM10(c){
+  if (c == null || !isFinite(c)) return null;
+  if (c <= 50)  return c;
+  if (c <= 350) return 50 + 0.5 * (c - 50);
+  if (c <= 420) return 200 + (c - 350);
+  if (c <= 500) return 300 + 0.5 * (c - 420);
+  return Math.min(500, 400 + (c - 500));
+}
+
+const COMPASS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+function compass(deg){ return COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
+
+// The bearing sector that points back at Sumatra differs by region:
+// from the Klang Valley it lies SW–WNW; from Penang it lies S–WSW.
+const SUMATRA_ARC = {
+  "Klang Valley & Negeri Sembilan": [200, 295],
+  "Pulau Pinang": [165, 255]
+};
+function upwindRisk(loc, deg){
+  if (deg == null) return false;
+  const arc = SUMATRA_ARC[loc.area];
+  if (!arc) return false;
+  const d = ((deg % 360) + 360) % 360;
+  return d >= arc[0] && d <= arc[1];
+}
+
+function fmt(n, dp){ return (n == null || !isFinite(n)) ? "–" : n.toFixed(dp == null ? 0 : dp); }
+function hhmm(iso){ return iso ? iso.slice(11,16) : ""; }
+function dayLabel(iso){
+  const d = new Date(iso + ":00");
+  return d.toLocaleDateString(undefined, { weekday:"short" }) + " " + iso.slice(11,16);
+}
+
+/* ============================ state ============================ */
+
+const state = {
+  rows: [],            // per location: merged data
+  lastOk: null,        // Date of last successful fetch
+  failures: 0,
+  loading: false,
+  view: "now",
+  alert: {},           // id -> { above:bool, last:ts }
+  flashTimer: null,
+  baseTitle: "Haze Watch — Malaysia"
+};
+
+/* ============================ fetching ============================ */
+
+function qs(o){ return Object.entries(o).map(([k,v]) => k + "=" + encodeURIComponent(v)).join("&"); }
+
+function withTimeout(promise, ms){
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timed out after " + Math.round(ms/1000) + "s")), ms);
+    promise.then(v => { clearTimeout(t); resolve(v); },
+                 e => { clearTimeout(t); reject(e); });
+  });
+}
+
+// Deliberately no AbortSignal and no Request object in the fetch init.
+// Some embedded viewers (in-app file previews, sandboxed iframes) proxy fetch
+// through postMessage, and a non-structured-cloneable init argument — an
+// AbortSignal is exactly that — makes the call die with DataCloneError before
+// it ever reaches the network. Timeouts are handled by racing a timer instead.
+async function getJSON(url, ms){
+  const timeout = ms || 15000;
+  const bust = url + (url.includes("?") ? "&" : "?") + "_=" + Date.now();
+  const attempts = [
+    () => fetch(bust),
+    () => fetch(bust, { method: "GET", mode: "cors", credentials: "omit" }),
+    () => new Promise((resolve, reject) => {           // XHR, for shims that break fetch
+      const x = new XMLHttpRequest();
+      x.open("GET", bust, true);
+      x.onload  = () => resolve({ ok: x.status >= 200 && x.status < 300, status: x.status,
+                                  text: () => Promise.resolve(x.responseText) });
+      x.onerror = () => reject(new Error("network error"));
+      x.send();
+    })
+  ];
+
+  let last;
+  for (const attempt of attempts) {
+    try {
+      const res = await withTimeout(Promise.resolve().then(attempt), timeout);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return JSON.parse(await res.text());
+    } catch (e) {
+      last = e;
+      console.warn("[hazewatch] attempt failed:", e.name + ": " + e.message);
+    }
+  }
+  throw last || new Error("unreachable");
+}
+
+async function refresh(manual){
+  if (state.loading) return;
+  state.loading = true;
+  setLive("checking", "updating…");
+
+  const lats = LOCATIONS.map(l => l.lat).join(",");
+  const lons = LOCATIONS.map(l => l.lon).join(",");
+  const common = { latitude:lats, longitude:lons, timezone:"Asia/Kuala_Lumpur" };
+
+  const aqUrl = AQ_URL + "?" + qs(Object.assign({}, common, {
+    current: "pm2_5,pm10,us_aqi,carbon_monoxide,ozone,nitrogen_dioxide,sulphur_dioxide",
+    hourly:  "pm2_5,pm10,us_aqi",
+    past_days: 2, forecast_days: 2
+  }));
+  const wxUrl = WX_URL + "?" + qs(Object.assign({}, common, {
+    current: "temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,visibility"
+  }));
+
+  try {
+    const [aqRes, wxRes] = await Promise.all([ getJSON(aqUrl), getJSON(wxUrl) ]);
+    const aq = Array.isArray(aqRes) ? aqRes : [aqRes];
+    const wx = Array.isArray(wxRes) ? wxRes : [wxRes];
+
+    state.rows = LOCATIONS.map((loc, i) => buildRow(loc, i, aq[i], wx[i]));
+    state.lastOk = new Date();
+    state.failures = 0;
+    render();
+    checkAlerts();
+  } catch (err) {
+    state.failures++;
+    console.warn("[hazewatch] fetch failed:", err);
+    renderBanner(err);
+    setLive(state.rows.length ? "stale" : "down",
+            state.rows.length ? "offline — showing last reading" : "can't reach data source");
+  } finally {
+    state.loading = false;
+    resetTimer();
+  }
+}
+
+function buildRow(loc, i, aq, wx){
+  const row = { ...loc, color: SERIES[i % SERIES.length] };
+  if (!aq || !aq.current || !aq.hourly) return Object.assign(row, { ok:false });
+
+  const H = aq.hourly;
+  const times = H.time || [];
+  let now = times.indexOf(aq.current.time);
+  if (now < 0) {
+    // fall back to the nearest past hour
+    const stamp = aq.current.time;
+    now = times.reduce((best, t, k) => (t <= stamp ? k : best), 0);
+  }
+
+  const from = Math.max(0, now - 24);
+  const to   = Math.min(times.length - 1, now + 24);
+
+  const slice = (arr) => (arr || []).slice(from, to + 1).map(v => (v == null ? null : +v));
+  const series = {
+    time: times.slice(from, to + 1),
+    aqi:  slice(H.us_aqi),
+    pm25: slice(H.pm2_5),
+    pm10: slice(H.pm10),
+    nowIdx: now - from
+  };
+
+  // trailing 24-hour means drive the Malaysian sub-indices
+  const mean = (arr) => {
+    const v = arr.filter(x => x != null && isFinite(x));
+    return v.length ? v.reduce((a,b) => a + b, 0) / v.length : null;
+  };
+  const past25 = { pm25: (H.pm2_5 || []).slice(Math.max(0, now - 23), now + 1).map(Number),
+                   pm10: (H.pm10  || []).slice(Math.max(0, now - 23), now + 1).map(Number) };
+  const sub25 = myPM25(mean(past25.pm25));
+  const sub10 = myPM10(mean(past25.pm10));
+  const myApi = (sub25 == null && sub10 == null) ? null
+              : Math.round(Math.max(sub25 == null ? 0 : sub25, sub10 == null ? 0 : sub10));
+
+  const aqiNow = Math.round(aq.current.us_aqi);
+  const prev3  = series.aqi[series.nowIdx - 3];
+  const delta  = (prev3 == null) ? null : aqiNow - Math.round(prev3);
+
+  // peak in the next 24h of forecast
+  const fwd = series.aqi.slice(series.nowIdx + 1);
+  const peak = fwd.length ? Math.max(...fwd.filter(v => v != null)) : null;
+  const peakAt = peak == null ? null : series.time[series.nowIdx + 1 + fwd.indexOf(peak)];
+
+  return Object.assign(row, {
+    ok: true,
+    obsTime: aq.current.time,
+    aqi: aqiNow,
+    pm25: aq.current.pm2_5,
+    pm10: aq.current.pm10,
+    o3: aq.current.ozone, no2: aq.current.nitrogen_dioxide,
+    so2: aq.current.sulphur_dioxide, co: aq.current.carbon_monoxide,
+    myApi, myApiPM25: sub25, myApiPM10: sub10,
+    delta, series, peak: peak == null ? null : Math.round(peak), peakAt,
+    wx: wx && wx.current ? wx.current : null
+  });
+}
+
+/* ============================ rendering ============================ */
+
+const $ = (s) => document.querySelector(s);
+
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function ordered(){
+  const rows = state.rows.filter(r => r.ok);
+  return S.sort ? rows.slice().sort((a,b) => b.aqi - a.aqi) : rows;
+}
+
+function render(){
+  renderBanner();
+  renderCards();
+  renderCompare();
+  renderTable();
+  renderFooter();
+  setLive("ok", "live");
+}
+
+function renderFooter(){
+  const t = state.lastOk;
+  $("#ftr").textContent = t
+    ? " · Last successful update " + t.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit", second:"2-digit"}) + "."
+    : "";
+}
+
+function renderBanner(err){
+  const b = $("#banner");
+  if (err) {
+    b.dataset.sev = "error";
+    $("#bIcon").textContent = "⚠";
+    $("#bTitle").textContent = "Couldn't reach the data source";
+    const why = err.name === "DataCloneError"
+      ? "This page is running inside a sandboxed preview that blocks outbound requests. Open the file in a normal browser window, or use the hosted link."
+      : /Failed to fetch|NetworkError|network error/i.test(err.message || "")
+        ? "The request was blocked or the network is down."
+        : (err.name + ": " + err.message);
+    $("#bBody").textContent = why + " " + (state.rows.length
+      ? "Showing the last good reading; retrying (attempt " + state.failures + ")."
+      : "Retrying automatically (attempt " + state.failures + ").");
+    return;
+  }
+  const rows = state.rows.filter(r => r.ok);
+  if (!rows.length) return;
+
+  const over = rows.filter(r => r.aqi >= S.thresh).sort((a,b) => b.aqi - a.aqi);
+  const worst = rows.slice().sort((a,b) => b.aqi - a.aqi)[0];
+  const rising = rows.filter(r => r.delta != null && r.delta >= 10).sort((a,b) => b.delta - a.delta);
+
+  if (over.length) {
+    b.dataset.sev = "alert";
+    $("#bIcon").textContent = "⚠";
+    $("#bTitle").textContent = over.length === 1
+      ? over[0].name + " is at US AQI " + over[0].aqi + " — " + band(over[0].aqi).label
+      : over.length + " locations above AQI " + S.thresh + " — worst is " + over[0].name + " at " + over[0].aqi;
+    $("#bBody").textContent = over.map(r => r.name + " " + r.aqi).join(" · ")
+      + (worst.peak != null && worst.peak > worst.aqi
+          ? " · " + worst.name + " forecast to peak near " + worst.peak + " around " + hhmm(worst.peakAt)
+          : "");
+  } else if (rising.length) {
+    b.dataset.sev = "watch";
+    $("#bIcon").textContent = "▲";
+    $("#bTitle").textContent = "Rising — " + rising[0].name + " up " + rising[0].delta + " in 3 hours (now " + rising[0].aqi + ")";
+    $("#bBody").textContent = "Nothing above your alert level of " + S.thresh + " yet. Worst right now: "
+      + worst.name + " at " + worst.aqi + " (" + band(worst.aqi).label + ").";
+  } else {
+    b.dataset.sev = "clear";
+    $("#bIcon").textContent = "●";
+    $("#bTitle").textContent = "Nothing above AQI " + S.thresh;
+    $("#bBody").textContent = "Worst right now: " + worst.name + " at " + worst.aqi
+      + " (" + band(worst.aqi).label + "). Cleanest: " + rows.slice().sort((a,b) => a.aqi - b.aqi)[0].name + ".";
+  }
+}
+
+function renderCards(){
+  const host = $("#groups");
+  const rows = ordered();
+  let html = "";
+
+  const sections = S.sort
+    ? [{ label: "All locations — worst first", rows }]
+    : AREAS.map(a => ({ label: a, rows: rows.filter(r => r.area === a) }));
+
+  for (const sec of sections) {
+    if (!sec.rows.length) continue;
+    html += '<div class="group-label">' + esc(sec.label) + '</div><div class="grid">';
+    for (const r of sec.rows) html += card(r);
+    html += '</div>';
+  }
+  host.innerHTML = html;
+  host.querySelectorAll("[data-spark]").forEach(el => wireSpark(el));
+}
+
+function card(r){
+  const b = band(r.aqi);
+  const w = r.wx || {};
+  const deg = w.wind_direction_10m;
+  const dir = deg == null ? null : compass(deg);
+  const risky = upwindRisk(r, deg);
+  const trend = r.delta == null ? "–"
+    : (r.delta > 0 ? "▲ +" + r.delta : r.delta < 0 ? "▼ " + r.delta : "– steady");
+
+  return `
+  <article class="card" style="--band:var(${b.bg}); --band-fg:var(${b.fg})">
+    <div class="card-in">
+      <div class="c-top">
+        <div>
+          <div class="c-name">${esc(r.name)}</div>
+          <div class="c-where">${esc(r.where)}</div>
+          <div class="pill"><span aria-hidden="true">${b.icon}</span>${esc(b.label)}</div>
+        </div>
+        <div class="aqi-wrap">
+          <div class="aqi-num">${r.aqi}</div>
+          <div class="aqi-cap">US AQI</div>
+          <div class="trend" style="justify-content:flex-end">${trend}<span style="color:var(--muted)">3h</span></div>
+        </div>
+      </div>
+
+      <div class="spark" data-spark="${r.id}">
+        ${sparkSVG(r)}
+        <div class="spark-ax"><span>${hhmm(r.series.time[0])} yest.</span><span>now</span><span>+24h</span></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="k">PM2.5</div><div class="v">${fmt(r.pm25,1)} <small>µg/m³</small></div></div>
+      <div class="stat"><div class="k">PM10</div><div class="v">${fmt(r.pm10,1)} <small>µg/m³</small></div></div>
+      <div class="stat"><div class="k">MY API*</div><div class="v">${r.myApi == null ? "–" : r.myApi} <small>${esc(myBand(r.myApi))}</small></div></div>
+    </div>
+
+    <div class="wind">
+      ${deg == null ? '<span style="color:var(--muted)">Wind unavailable</span>' : `
+      <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true" style="transform:rotate(${(deg+180)%360}deg)">
+        <path d="M12 3 L12 21 M12 3 L7.5 8.5 M12 3 L16.5 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="w1"><b>from ${esc(dir)}</b> · ${fmt(w.wind_speed_10m,0)} km/h</span>
+      ${risky ? '<span class="track" title="Wind is arriving from the south-west-to-west sector — the direction transboundary smoke from Sumatra travels on">Sumatra track</span>' : ''}`}
+      <span class="w2" title="Modelled horizontal visibility">${w.visibility != null ? (w.visibility/1000).toFixed(1) + " km vis" : ""}</span>
+    </div>
+  </article>`;
+}
+
+/* ---------- sparkline (one series, non-scaling stroke) ---------- */
+
+const SW = 300, SH = 62, SPAD = 4;
+
+function sparkSVG(r){
+  const a = r.series.aqi;
+  const vals = a.filter(v => v != null);
+  if (!vals.length) return '<svg viewBox="0 0 300 62"></svg>';
+
+  const hi = Math.max(200, Math.ceil(Math.max(...vals) / 50) * 50);
+  const x = (i) => SPAD + i * (SW - 2*SPAD) / Math.max(1, a.length - 1);
+  const y = (v) => SH - SPAD - (v / hi) * (SH - 2*SPAD);
+
+  const n = r.series.nowIdx;
+  const path = (from, to) => {
+    let d = "", pen = false;
+    for (let i = from; i <= to; i++) {
+      const v = a[i]; if (v == null) { pen = false; continue; }
+      d += (pen ? "L" : "M") + x(i).toFixed(2) + " " + y(v).toFixed(2) + " ";
+      pen = true;
+    }
+    return d.trim();
+  };
+
+  const area = (() => {
+    let d = "M" + x(0).toFixed(2) + " " + (SH - SPAD);
+    for (let i = 0; i <= n; i++) if (a[i] != null) d += "L" + x(i).toFixed(2) + " " + y(a[i]).toFixed(2);
+    return d + "L" + x(n).toFixed(2) + " " + (SH - SPAD) + "Z";
+  })();
+
+  const refs = [100, 150].filter(v => v < hi).map(v =>
+    `<line x1="0" y1="${y(v).toFixed(2)}" x2="${SW}" y2="${y(v).toFixed(2)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`
+  ).join("");
+
+  const gid = "g-" + r.id;
+  return `
+  <svg viewBox="0 0 ${SW} ${SH}" preserveAspectRatio="none" role="img"
+       aria-label="Hourly US AQI for ${esc(r.name)}, past 24 hours and next 24 hours">
+    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="var(--band)" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="var(--band)" stop-opacity="0.02"/>
+    </linearGradient></defs>
+    ${refs}
+    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${path(0, n)}" fill="none" stroke="var(--band)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <path d="${path(n, a.length-1)}" fill="none" stroke="var(--band)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" opacity="0.6" vector-effect="non-scaling-stroke"/>
+    <line x1="${x(n).toFixed(2)}" y1="0" x2="${x(n).toFixed(2)}" y2="${SH}" stroke="var(--axis)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+    <circle cx="${x(n).toFixed(2)}" cy="${y(a[n] == null ? 0 : a[n]).toFixed(2)}" r="3.2"
+            fill="var(--band)" stroke="var(--surface)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    <g class="hover" opacity="0">
+      <line class="hx" y1="0" y2="${SH}" stroke="var(--ink-2)" stroke-width="1" vector-effect="non-scaling-stroke"/>
+      <circle class="hd" r="3.6" fill="var(--band)" stroke="var(--surface)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    </g>
+  </svg>`;
+}
+
+function wireSpark(el){
+  const id = el.dataset.spark;
+  const r = state.rows.find(v => v.id === id);
+  if (!r) return;
+  const svg = el.querySelector("svg");
+  const hover = svg.querySelector(".hover");
+  const hx = svg.querySelector(".hx"), hd = svg.querySelector(".hd");
+  const a = r.series.aqi;
+
+  const hi = (() => {
+    const vals = a.filter(v => v != null);
+    return Math.max(200, Math.ceil(Math.max(...vals) / 50) * 50);
+  })();
+  const xAt = (i) => SPAD + i * (SW - 2*SPAD) / Math.max(1, a.length - 1);
+  const yAt = (v) => SH - SPAD - (v / hi) * (SH - 2*SPAD);
+
+  function move(ev){
+    const bb = svg.getBoundingClientRect();
+    const t = Math.min(1, Math.max(0, (ev.clientX - bb.left) / bb.width));
+    const i = Math.round(t * (a.length - 1));
+    if (a[i] == null) return;
+    hover.setAttribute("opacity", "1");
+    hx.setAttribute("x1", xAt(i)); hx.setAttribute("x2", xAt(i));
+    hd.setAttribute("cx", xAt(i)); hd.setAttribute("cy", yAt(a[i]));
+    const future = i > r.series.nowIdx;
+    showTip(ev, `<div class="tt">${esc(dayLabel(r.series.time[i]))}${future ? " · forecast" : ""}</div>
+      <div class="tr"><span class="nm"><span class="sw" style="background:var(--band)"></span>US AQI</span><b>${Math.round(a[i])}</b></div>
+      <div class="tr"><span class="nm" style="padding-left:16px">PM2.5</span><b>${fmt(r.series.pm25[i],1)}</b></div>
+      <div class="tr"><span class="nm" style="padding-left:16px">PM10</span><b>${fmt(r.series.pm10[i],1)}</b></div>`);
+  }
+  el.addEventListener("pointermove", move);
+  el.addEventListener("pointerleave", () => { hover.setAttribute("opacity","0"); hideTip(); });
+}
+
+/* ---------- compare chart (multi-series, measured width) ---------- */
+
+const CM = { top:16, right:88, bottom:26, left:40 };
+
+function renderCompare(){
+  const svg = $("#cmp");
+  const rows = state.rows.filter(r => r.ok && !S.hidden.includes(r.id));
+  const all  = state.rows.filter(r => r.ok);
+  if (!all.length) return;
+
+  // legend first — it must exist even when everything is hidden
+  $("#legend").innerHTML = all.map(r =>
+    `<span class="lg" data-lg="${r.id}" data-off="${S.hidden.includes(r.id) ? 1 : 0}" role="button" tabindex="0">
+       <span class="sw" style="background:var(${r.color})"></span>${esc(r.name)}</span>`).join("");
+  $("#legend").querySelectorAll("[data-lg]").forEach(el => {
+    const go = () => {
+      const id = el.dataset.lg;
+      S.hidden = S.hidden.includes(id) ? S.hidden.filter(x => x !== id) : S.hidden.concat([id]);
+      saveSettings(); renderCompare();
+    };
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+  });
+
+  const W = Math.max(360, svg.clientWidth || svg.parentElement.clientWidth - 36);
+  const H = Math.min(420, Math.max(260, Math.round(W * 0.38)));
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("height", H);
+
+  // On a narrow screen the direct end labels won't fit; the legend carries identity there.
+  const showEnds = W >= 620;
+  const RIGHT = showEnds ? CM.right : 14;
+
+  const ref = all[0].series;
+  const N = ref.time.length, nowIdx = ref.nowIdx;
+  const vals = rows.flatMap(r => r.series.aqi).filter(v => v != null);
+  const hi = Math.max(200, Math.ceil((vals.length ? Math.max(...vals) : 200) / 50) * 50);
+
+  const x = (i) => CM.left + i * (W - CM.left - RIGHT) / Math.max(1, N - 1);
+  const y = (v) => CM.top + (1 - v / hi) * (H - CM.top - CM.bottom);
+
+  let g = "";
+
+  // AQI category bands as faint background rules + y axis
+  const ticks = [];
+  for (let v = 0; v <= hi; v += (hi > 300 ? 100 : 50)) ticks.push(v);
+  g += ticks.map(v =>
+    `<line x1="${CM.left}" y1="${y(v).toFixed(1)}" x2="${W - RIGHT}" y2="${y(v).toFixed(1)}" stroke="var(--grid)" stroke-width="1"/>
+     <text x="${CM.left - 8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--muted)">${v}</text>`
+  ).join("");
+
+  // threshold line — labelled on the left so it never fights the end labels
+  if (S.thresh <= hi) {
+    g += `<line x1="${CM.left}" y1="${y(S.thresh).toFixed(1)}" x2="${W - RIGHT}" y2="${y(S.thresh).toFixed(1)}"
+            stroke="var(--b-unh)" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.75"/>
+          <text x="${CM.left + 5}" y="${(y(S.thresh) - 6).toFixed(1)}" font-size="10.5" fill="var(--b-unh)" font-weight="600"
+                stroke="var(--surface)" stroke-width="3" paint-order="stroke" stroke-linejoin="round">alert level ${S.thresh}</text>`;
+  }
+
+  // x ticks — thinned out on narrow screens so the labels never run together
+  const tickStep = W >= 820 ? 6 : W >= 560 ? 8 : 12;
+  for (let i = 0; i < N; i += tickStep) {
+    g += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${hhmm(ref.time[i])}</text>`;
+  }
+
+  // now divider
+  g += `<line x1="${x(nowIdx).toFixed(1)}" y1="${CM.top - 6}" x2="${x(nowIdx).toFixed(1)}" y2="${H - CM.bottom}" stroke="var(--axis)" stroke-width="1.5"/>
+        <text x="${(x(nowIdx)+5).toFixed(1)}" y="${CM.top - 1}" font-size="10.5" fill="var(--muted)"
+              stroke="var(--surface)" stroke-width="3" paint-order="stroke" stroke-linejoin="round">now</text>`;
+
+  // series
+  const endLabels = [];
+  for (const r of rows) {
+    const a = r.series.aqi;
+    const seg = (from, to) => {
+      let d = "", pen = false;
+      for (let i = from; i <= to && i < a.length; i++) {
+        if (a[i] == null) { pen = false; continue; }
+        d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(a[i]).toFixed(1) + " ";
+        pen = true;
+      }
+      return d.trim();
+    };
+    g += `<path d="${seg(0, nowIdx)}" fill="none" stroke="var(${r.color})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    g += `<path d="${seg(nowIdx, a.length-1)}" fill="none" stroke="var(${r.color})" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" opacity="0.65"/>`;
+    const last = a.length - 1;
+    if (a[last] != null) endLabels.push({ y: y(a[last]), text: r.short, color: r.color });
+    if (a[nowIdx] != null) {
+      g += `<circle cx="${x(nowIdx).toFixed(1)}" cy="${y(a[nowIdx]).toFixed(1)}" r="3.6" fill="var(${r.color})" stroke="var(--surface)" stroke-width="2"/>`;
+    }
+  }
+
+  // direct end labels (the relief for light-mode contrast), pushed apart so none collide
+  if (showEnds) {
+    const GAP = 13, topY = CM.top + 4, botY = H - CM.bottom;
+    endLabels.sort((p, q) => p.y - q.y);
+    for (let i = 1; i < endLabels.length; i++) {
+      if (endLabels[i].y - endLabels[i-1].y < GAP) endLabels[i].y = endLabels[i-1].y + GAP;
+    }
+    const over = endLabels.length ? endLabels[endLabels.length-1].y - botY : 0;
+    if (over > 0) for (const L of endLabels) L.y = Math.max(topY, L.y - over);
+    for (const L of endLabels) {
+      g += `<circle cx="${(W - RIGHT + 8).toFixed(1)}" cy="${(L.y - 3.5).toFixed(1)}" r="3" fill="var(${L.color})"/>`
+         + `<text x="${(W - RIGHT + 15).toFixed(1)}" y="${L.y.toFixed(1)}" font-size="10.5" fill="var(--ink-2)">${esc(L.text)}</text>`;
+    }
+  }
+
+  g += `<g class="chover" opacity="0"><line class="chx" y1="${CM.top}" y2="${H - CM.bottom}" stroke="var(--ink-2)" stroke-width="1"/></g>`;
+  g += `<rect x="${CM.left}" y="${CM.top}" width="${W - CM.left - RIGHT}" height="${H - CM.top - CM.bottom}" fill="transparent" class="chit"/>`;
+
+  svg.innerHTML = g;
+
+  const hov = svg.querySelector(".chover"), chx = svg.querySelector(".chx");
+  svg.querySelector(".chit").addEventListener("pointermove", (ev) => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (W / bb.width);
+    const t = Math.min(1, Math.max(0, (px - CM.left) / (W - CM.left - RIGHT)));
+    const i = Math.round(t * (N - 1));
+    hov.setAttribute("opacity", "1");
+    chx.setAttribute("x1", x(i)); chx.setAttribute("x2", x(i));
+    const lines = rows
+      .map(r => ({ r, v: r.series.aqi[i] }))
+      .filter(o => o.v != null)
+      .sort((p,q) => q.v - p.v)
+      .map(o => `<div class="tr"><span class="nm"><span class="sw" style="background:var(${o.r.color})"></span>${esc(o.r.name)}</span><b>${Math.round(o.v)}</b></div>`)
+      .join("");
+    showTip(ev, `<div class="tt">${esc(dayLabel(ref.time[i]))}${i > nowIdx ? " · forecast" : ""}</div>${lines}`);
+  });
+  svg.querySelector(".chit").addEventListener("pointerleave", () => { hov.setAttribute("opacity","0"); hideTip(); });
+}
+
+function renderTable(){
+  const tb = $("#tbl").querySelector("tbody");
+  tb.innerHTML = ordered().map(r => {
+    const b = band(r.aqi);
+    const w = r.wx || {};
+    const d = w.wind_direction_10m;
+    return `<tr>
+      <td>${esc(r.name)}</td>
+      <td><b>${r.aqi}</b></td>
+      <td><span class="tag" style="background:var(${b.bg}); color:var(${b.fg})">${esc(b.label)}</span></td>
+      <td>${fmt(r.pm25,1)}</td>
+      <td>${fmt(r.pm10,1)}</td>
+      <td>${r.myApi == null ? "–" : r.myApi + " · " + esc(myBand(r.myApi))}</td>
+      <td>${d == null ? "–" : esc(compass(d)) + " " + fmt(w.wind_speed_10m,0) + " km/h"}</td>
+      <td>${r.delta == null ? "–" : (r.delta > 0 ? "+" : "") + r.delta}</td>
+    </tr>`;
+  }).join("");
+}
+
+/* ============================ tooltip ============================ */
+
+const tip = $("#tip");
+function showTip(ev, html){
+  tip.innerHTML = html;
+  tip.classList.add("on");
+  const pad = 14, r = tip.getBoundingClientRect();
+  let left = ev.clientX + pad, top = ev.clientY + pad;
+  if (left + r.width > innerWidth - 8)  left = ev.clientX - r.width - pad;
+  if (top + r.height > innerHeight - 8) top = ev.clientY - r.height - pad;
+  tip.style.left = Math.max(8, left) + "px";
+  tip.style.top  = Math.max(8, top) + "px";
+}
+function hideTip(){ tip.classList.remove("on"); }
+
+/* ============================ alerts ============================ */
+
+function checkAlerts(){
+  const now = Date.now();
+  const fired = [];
+  for (const r of state.rows.filter(v => v.ok)) {
+    const st = state.alert[r.id] || (state.alert[r.id] = { above:false, last:0 });
+    const above = r.aqi >= S.thresh;
+    if (above && (!st.above || now - st.last > 3600000)) { fired.push(r); st.last = now; }
+    st.above = above;
+  }
+  const anyAbove = state.rows.some(r => r.ok && r.aqi >= S.thresh);
+  flashTitle(anyAbove);
+  if (!fired.length) return;
+
+  const worst = fired.sort((a,b) => b.aqi - a.aqi)[0];
+  const body = fired.map(r => r.name + " " + r.aqi + " (" + band(r.aqi).label + ")").join("\n");
+
+  if ("Notification" in window && Notification.permission === "granted") {
+    try {
+      new Notification("Haze alert — " + worst.name + " AQI " + worst.aqi, {
+        body, tag: "hazewatch", renotify: true
+      });
+    } catch (e) { console.warn("[hazewatch] notification blocked:", e); }
+  }
+  if (S.chime) chime();
+}
+
+function flashTitle(on){
+  if (state.flashTimer) { clearInterval(state.flashTimer); state.flashTimer = null; }
+  if (!on) { document.title = state.baseTitle; return; }
+  const worst = state.rows.filter(r => r.ok).sort((a,b) => b.aqi - a.aqi)[0];
+  const msg = "⚠ " + worst.aqi + " " + worst.name;
+  let flip = false;
+  document.title = msg;
+  state.flashTimer = setInterval(() => {
+    flip = !flip;
+    document.title = flip ? state.baseTitle : msg;
+  }, 2500);
+}
+
+let audioCtx = null;
+function chime(){
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    [0, 0.26].forEach((offset, k) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.value = k ? 660 : 880;
+      const t = audioCtx.currentTime + offset;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + 0.24);
+    });
+  } catch (e) { console.warn("[hazewatch] chime unavailable:", e); }
+}
+
+/* ============================ timer & chrome ============================ */
+
+let tickTimer = null, nextAt = 0;
+
+function resetTimer(){
+  nextAt = Date.now() + S.every * 60000;
+}
+function tick(){
+  if (state.loading) return;
+  const left = Math.max(0, nextAt - Date.now());
+  if (left <= 0) { refresh(); return; }
+  if (state.failures === 0 && state.lastOk) {
+    const m = Math.floor(left / 60000), s = Math.floor(left % 60000 / 1000);
+    setLive("ok", "next in " + (m ? m + "m " : "") + String(s).padStart(m ? 2 : 1, "0") + "s");
+  }
+}
+
+function setLive(kind, text){
+  const d = $("#dot");
+  d.className = "dot" + (kind === "ok" ? " pulse" : kind === "stale" ? " stale" : kind === "down" ? " down" : " pulse");
+  $("#liveTxt").textContent = text;
+}
+
+function setView(v){
+  state.view = v;
+  $("#tabNow").setAttribute("aria-selected", v === "now");
+  $("#tabCmp").setAttribute("aria-selected", v === "cmp");
+  $("#viewNow").classList.toggle("hide", v !== "now");
+  $("#viewCmp").classList.toggle("hide", v !== "cmp");
+  if (v === "cmp") renderCompare();
+}
+
+function applyTheme(){
+  document.documentElement.setAttribute("data-theme", S.theme);
+  if (state.rows.length) { renderCards(); renderCompare(); }
+}
+
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+    ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+}
+
+/* ============================ settings dialog ============================ */
+
+function syncDialog(){
+  $("#setEvery").value  = String(S.every);
+  $("#setThresh").value = String(S.thresh);
+  $("#setChime").textContent = S.chime ? "On" : "Off";
+  $("#setSort").textContent  = S.sort ? "On" : "Off";
+
+  const supported = "Notification" in window;
+  const perm = supported ? Notification.permission : "unsupported";
+  $("#notifState").textContent =
+    perm === "granted" ? "Enabled for this page." :
+    perm === "denied"  ? "Blocked by the browser for this page." :
+    perm === "default" ? "Not enabled yet." : "Not supported here.";
+  $("#setNotif").textContent = perm === "granted" ? "Enabled" : "Enable";
+  $("#setNotif").disabled = (perm === "granted" || perm === "denied" || !supported);
+
+  const isFile = location.protocol === "file:";
+  $("#notifNote").innerHTML = (perm === "granted")
+    ? "You'll also always get the coloured banner and a flashing tab title, so a background tab still catches your eye."
+    : isFile
+      ? "Browsers block desktop notifications for pages opened straight off the disk (a <code>file://</code> address). "
+        + "The banner and the flashing tab title work regardless. Open the hosted version over <code>https</code> and the Enable button will work."
+      : "Click Enable and accept your browser's prompt. The coloured banner and flashing tab title work either way.";
+}
+
+/* ============================ wiring ============================ */
+
+loadSettings();
+applyTheme();
+
+$("#tabNow").addEventListener("click", () => setView("now"));
+$("#tabCmp").addEventListener("click", () => setView("cmp"));
+$("#btnRefresh").addEventListener("click", () => { resetTimer(); refresh(true); });
+$("#btnTheme").addEventListener("click", () => {
+  S.theme = S.theme === "dark" ? "light" : S.theme === "light" ? "auto" : "dark";
+  saveSettings(); applyTheme();
+});
+$("#btnSet").addEventListener("click", () => { syncDialog(); $("#dlg").showModal(); });
+
+let toastTimer = null;
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
+}
+
+$("#btnShare").addEventListener("click", async () => {
+  const url = location.href.split("#")[0];
+  const worst = state.rows.filter(r => r.ok).sort((a,b) => b.aqi - a.aqi)[0];
+  const text = worst
+    ? "Haze Watch — " + worst.name + " is at US AQI " + worst.aqi + " (" + band(worst.aqi).label + ")"
+    : "Live air quality for the Klang Valley and Penang";
+  if (location.protocol === "file:") {
+    toast("Host this page to share it — see the README");
+    return;
+  }
+  try {
+    if (navigator.share) { await navigator.share({ title: "Haze Watch — Malaysia", text, url }); return; }
+    await navigator.clipboard.writeText(url);
+    toast("Link copied");
+  } catch (e) {
+    if (e && e.name === "AbortError") return;   // user dismissed the share sheet
+    toast(url);
+  }
+});
+$("#setClose").addEventListener("click", () => $("#dlg").close());
+
+$("#setEvery").addEventListener("change", e => { S.every = +e.target.value; saveSettings(); resetTimer(); });
+$("#setThresh").addEventListener("change", e => {
+  S.thresh = +e.target.value; saveSettings();
+  state.alert = {};
+  if (state.rows.length) { renderBanner(); renderCompare(); checkAlerts(); }
+});
+$("#setNotif").addEventListener("click", async () => {
+  if (!("Notification" in window)) return;
+  try { await Notification.requestPermission(); } catch (e) { console.warn(e); }
+  syncDialog();
+});
+$("#setChime").addEventListener("click", () => {
+  S.chime = !S.chime; saveSettings(); syncDialog();
+  if (S.chime) chime();                       // also unlocks audio on this gesture
+});
+$("#setSort").addEventListener("click", () => {
+  S.sort = !S.sort; saveSettings(); syncDialog();
+  if (state.rows.length) { renderCards(); renderTable(); }
+});
+
+let rsz;
+addEventListener("resize", () => {
+  clearTimeout(rsz);
+  rsz = setTimeout(() => { if (state.view === "cmp") renderCompare(); }, 150);
+});
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && Date.now() > nextAt) refresh();
+});
+
+resetTimer();
+refresh();
+tickTimer = setInterval(tick, 1000);
+</script>
+</body>
+</html>
