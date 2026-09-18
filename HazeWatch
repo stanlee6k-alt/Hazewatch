@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Haze Watch — Malaysia</title>
-<meta name="description" content="Live air quality for Kuala Lumpur, Semenyih, Seremban and Penang. US AQI, PM2.5, PM10 and the wind direction that carries haze in. Refreshes every five minutes.">
+<meta name="description" content="Live air quality for Kuala Lumpur, Semenyih, Seremban and Penang, measured at Department of Environment stations. US AQI, PM2.5, PM10 and the wind direction that carries haze in.">
 <meta name="color-scheme" content="light dark">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Haze Watch — Malaysia">
@@ -142,9 +142,20 @@
   .trend { font-size:12px; color: var(--ink-2); margin-top:8px; display:flex; align-items:center; gap:5px; }
   .trend b { font-weight:600; color:var(--ink); }
 
-  .spark { margin: 12px 0 2px; position:relative; }
-  .spark svg { display:block; width:100%; height:62px; }
-  .spark-ax { display:flex; justify-content:space-between; font-size:10px; color:var(--muted); margin-top:1px; }
+  .via { display:flex; align-items:center; gap:7px; margin-top:12px; padding-top:10px;
+         border-top:1px solid var(--grid); font-size:11.5px; color:var(--muted); }
+  .dotmark { width:6px; height:6px; border-radius:50%; background:var(--band); flex:none; }
+
+  .outlook { margin-top:12px; }
+  .outlook.empty { font-size:11.5px; color:var(--muted); }
+  .ol-cap { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:7px; }
+  .ol-row { display:flex; gap:6px; align-items:flex-end; }
+  .ol { flex:1 1 0; min-width:0; text-align:center; }
+  .ol-bar { position:relative; background:var(--surface-2); border-radius:4px; overflow:hidden; }
+  .ol-fill { position:absolute; left:0; right:0; bottom:0; border-radius:4px 4px 0 0; }
+  .ol-rng { position:absolute; left:calc(50% - 1.5px); width:3px; background:var(--ink-2); opacity:.45; border-radius:2px; }
+  .ol-v { font-size:11.5px; font-weight:620; margin-top:5px; font-variant-numeric:tabular-nums; }
+  .ol-d { font-size:10px; color:var(--muted); margin-top:1px; }
 
   .stats { display:grid; grid-template-columns: repeat(3, 1fr); gap:1px; background: var(--border); border-top:1px solid var(--border); }
   .stat { background: var(--surface); padding: 9px 12px; }
@@ -242,7 +253,7 @@
 <header>
   <div>
     <h1>Haze Watch — Malaysia</h1>
-    <div class="sub" id="sub">Klang Valley &amp; Penang · US AQI · auto-refreshing</div>
+    <div class="sub" id="sub">Klang Valley &amp; Penang · measured at DOE stations · auto-refreshing</div>
   </div>
   <div class="spacer"></div>
   <div class="hdr-tools">
@@ -272,19 +283,19 @@
 
 <section id="viewCmp" class="hide">
   <div class="panel">
-    <h2>US AQI — past 24 hours and next 24 hours</h2>
-    <div class="psub">Hourly. The vertical marker is now; everything to its right is forecast.</div>
+    <h2>Daily outlook — all six locations</h2>
+    <div class="psub">Forecast daily average US AQI from each station. Hover for the full day.</div>
     <svg id="cmp" role="img" aria-label="Line chart comparing hourly US AQI across six Malaysian locations"></svg>
     <div class="legend" id="legend"></div>
   </div>
   <div class="panel" style="margin-top:14px">
     <h2>Current readings</h2>
-    <div class="psub">Same data as the chart, as a table.</div>
+    <div class="psub">Measured now, at each location’s nearest station.</div>
     <div style="overflow-x:auto">
       <table class="tbl" id="tbl">
         <thead><tr>
-          <th>Location</th><th>US AQI</th><th>Category</th><th>PM2.5</th><th>PM10</th>
-          <th>MY API<span title="Estimated" style="cursor:help">*</span></th><th>Wind</th><th>3h trend</th>
+          <th>Location</th><th>Station</th><th>US AQI</th><th>Category</th><th>PM2.5</th><th>PM10</th>
+          <th>MY API<span title="Estimated" style="cursor:help">*</span></th><th>Tomorrow</th><th>Wind</th>
         </tr></thead>
         <tbody></tbody>
       </table>
@@ -310,17 +321,20 @@
 
       <p><b>Malaysia's own API will usually read lower than the US AQI for the same air.</b> That isn't an error in either number. Malaysia's "Moderate" band runs up to 75.5 µg/m³ of PM2.5 where the US band stops at 35.4, so a day the DOE calls Moderate can be Unhealthy on the US scale. Both are shown here so you can see the gap rather than be surprised by it.</p>
 
-      <p><b>Watch the wind, not just the number.</b> Malaysia's worst haze usually blows in rather than building up locally. When a location's wind is arriving from the sector that points back at Sumatra, it carries a <span class="track">Sumatra track</span> tag — often hours before the reading climbs.</p>
+      <p><b>Watch the wind, not just the number.</b> Malaysia's worst haze usually blows in rather than building up locally. When a location's wind is arriving from the sector that points back at Sumatra, it carries a <span class="track">Sumatra track</span> tag — often before the reading climbs.</p>
 
-      <p><b>This is a forecast model, not a sensor on your street.</b> The figures come from Open-Meteo's CAMS atmospheric model, which blends satellite observation with simulation on a grid of roughly 11 km. It's excellent for seeing a haze episode coming and for comparing one town against another. For an official number — the one advisories and school closures are based on — check the Department of Environment's APIMS stations, linked below.</p>
+      <p><b>These are measured readings, not a simulation.</b> Every headline number comes from a Department of Environment monitoring station — the same instruments APIMS publishes from. Each card names its station and the distance to it, because a station is never in your exact spot: Seremban's is under 3 km away, Semenyih's nearest is 15 km off in Nilai. Air quality varies over that distance, so read it as the nearest real measurement rather than a reading for your street.</p><p><b>The daily outlook is a forecast</b>, and the only modelled figure here. It shows each day's expected average with its range, so a bad afternoon inside a moderate day is still visible.</p>
     </div>
   </details>
 </section>
 
 <footer>
-  Air quality and weather from the <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> CAMS model — modelled/interpolated, not a physical sensor at each point.
-  Treat it as an early signal, and check <a href="https://apims.doe.gov.my/public_v2/api_table.html" target="_blank" rel="noopener">DOE APIMS</a> for Malaysia's official station readings.
-  <br>* MY API is this tool's estimate of Malaysia's Air Pollutant Index, computed from the trailing 24-hour PM2.5 and PM10 averages using the DOE sub-index formulas. It is not an official DOE figure.
+  Air quality measured at Department of Environment monitoring stations, delivered via the
+  <a href="https://aqicn.org/" target="_blank" rel="noopener">World Air Quality Index</a> project. Wind and visibility from
+  <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>.
+  Each card names the station its reading comes from and how far away it is. For the official table, see
+  <a href="https://apims.doe.gov.my/public_v2/api_table.html" target="_blank" rel="noopener">DOE APIMS</a>.
+  <br>* MY API is this tool's estimate of Malaysia's Air Pollutant Index, computed from the station's 24-hour average PM2.5 and PM10 using the DOE sub-index formulas. It is not an official DOE figure.
   <span id="ftr"></span>
 </footer>
 
@@ -379,33 +393,36 @@
 
 /* ============================ config ============================ */
 
+// Each location is bound to the nearest Department of Environment monitoring
+// station. The station's name and its distance are shown on every card, so a
+// reading is never presented as though it were taken at the place itself.
 const LOCATIONS = [
-  { id:"kl",  name:"Kuala Lumpur",  short:"KL",          where:"Federal Territory · city centre", area:"Klang Valley & Negeri Sembilan", lat:3.1390, lon:101.6869 },
-  { id:"sem", name:"Semenyih",      short:"Semenyih",    where:"Selangor · Hulu Langat",          area:"Klang Valley & Negeri Sembilan", lat:2.9560, lon:101.8430 },
-  { id:"ser", name:"Seremban",      short:"Seremban",    where:"Negeri Sembilan",                 area:"Klang Valley & Negeri Sembilan", lat:2.7258, lon:101.9424 },
-  { id:"geo", name:"Georgetown",    short:"G'town",      where:"Pulau Pinang · island north-east", area:"Pulau Pinang", lat:5.4141, lon:100.3288 },
-  { id:"bly", name:"Bayan Lepas",   short:"B. Lepas",    where:"Pulau Pinang · island south",      area:"Pulau Pinang", lat:5.2971, lon:100.2769 },
-  { id:"bmt", name:"Bukit Mertajam",short:"B. Mertajam", where:"Pulau Pinang · Seberang Perai",    area:"Pulau Pinang", lat:5.3632, lon:100.4667 }
+  { id:"kl",  name:"Kuala Lumpur",   short:"KL",          where:"Federal Territory",        area:"Klang Valley & Negeri Sembilan", uid:2625, lat:3.1390, lon:101.6869 },
+  { id:"sem", name:"Semenyih",       short:"Semenyih",    where:"Selangor · Hulu Langat",   area:"Klang Valley & Negeri Sembilan", uid:2588, lat:2.9560, lon:101.8430 },
+  { id:"ser", name:"Seremban",       short:"Seremban",    where:"Negeri Sembilan",          area:"Klang Valley & Negeri Sembilan", uid:2590, lat:2.7258, lon:101.9424 },
+  { id:"geo", name:"Georgetown",     short:"G'town",      where:"Pulau Pinang · island",    area:"Pulau Pinang", uid:9489, lat:5.4141, lon:100.3288 },
+  { id:"bly", name:"Bayan Lepas",    short:"B. Lepas",    where:"Pulau Pinang · island south", area:"Pulau Pinang", uid:9490, lat:5.2971, lon:100.2769 },
+  { id:"bmt", name:"Bukit Mertajam", short:"B. Mertajam", where:"Pulau Pinang · Seberang Perai", area:"Pulau Pinang", uid:2600, lat:5.3632, lon:100.4667 }
 ];
 const AREAS = ["Klang Valley & Negeri Sembilan", "Pulau Pinang"];
 const SERIES = ["--s1","--s2","--s3","--s4","--s5","--s6"];
 
-const AQ_URL = "https://air-quality-api.open-meteo.com/v1/air-quality";
-const WX_URL = "https://api.open-meteo.com/v1/forecast";
+const WAQI_TOKEN = "b968e0b93bac4b44431fcd54ba56ce7c32f9ebd0";
+const WAQI_URL   = "https://api.waqi.info/feed/@";
+const WX_URL     = "https://api.open-meteo.com/v1/forecast";
 
 const BANDS = [
-  { max:50,   key:"good", label:"Good",                      bg:"--b-good", fg:"--b-good-fg", icon:"●" },
-  { max:100,  key:"mod",  label:"Moderate",                  bg:"--b-mod",  fg:"--b-mod-fg",  icon:"●" },
-  { max:150,  key:"usg",  label:"Unhealthy — sensitive",     bg:"--b-usg",  fg:"--b-usg-fg",  icon:"▲" },
-  { max:200,  key:"unh",  label:"Unhealthy",                 bg:"--b-unh",  fg:"--b-unh-fg",  icon:"▲" },
-  { max:300,  key:"vun",  label:"Very Unhealthy",            bg:"--b-vun",  fg:"--b-vun-fg",  icon:"■" },
-  { max:1e9,  key:"haz",  label:"Hazardous",                 bg:"--b-haz",  fg:"--b-haz-fg",  icon:"■" }
+  { max:50,   key:"good", label:"Good",                  bg:"--b-good", fg:"--b-good-fg", icon:"●" },
+  { max:100,  key:"mod",  label:"Moderate",              bg:"--b-mod",  fg:"--b-mod-fg",  icon:"●" },
+  { max:150,  key:"usg",  label:"Unhealthy — sensitive", bg:"--b-usg",  fg:"--b-usg-fg",  icon:"▲" },
+  { max:200,  key:"unh",  label:"Unhealthy",             bg:"--b-unh",  fg:"--b-unh-fg",  icon:"▲" },
+  { max:300,  key:"vun",  label:"Very Unhealthy",        bg:"--b-vun",  fg:"--b-vun-fg",  icon:"■" },
+  { max:1e9,  key:"haz",  label:"Hazardous",             bg:"--b-haz",  fg:"--b-haz-fg",  icon:"■" }
 ];
 const MY_BANDS = [
   { max:50,  label:"Good" }, { max:100, label:"Moderate" }, { max:200, label:"Unhealthy" },
   { max:300, label:"Very Unhealthy" }, { max:1e9, label:"Hazardous" }
 ];
-
 function band(aqi){ for (const b of BANDS) if (aqi <= b.max) return b; return BANDS[BANDS.length-1]; }
 function myBand(v){ for (const b of MY_BANDS) if (v <= b.max) return b.label; return "Hazardous"; }
 
@@ -416,18 +433,33 @@ let S = Object.assign({}, DEFAULTS);
 
 function loadSettings(){
   try {
-    const raw = localStorage.getItem("hazewatch.v1");
+    const raw = localStorage.getItem("hazewatch.v2");
     if (raw) S = Object.assign({}, DEFAULTS, JSON.parse(raw));
-  } catch (e) { /* file:// or blocked storage — run with defaults */ }
+  } catch (e) { /* blocked storage — run with defaults */ }
   if (!Array.isArray(S.hidden)) S.hidden = [];
 }
 function saveSettings(){
-  try { localStorage.setItem("hazewatch.v1", JSON.stringify(S)); } catch (e) {}
+  try { localStorage.setItem("hazewatch.v2", JSON.stringify(S)); } catch (e) {}
 }
 
 /* ============================ index maths ============================ */
 
-// Malaysia DOE PM2.5 sub-index (24-hour average, µg/m³)
+// US EPA breakpoints (PM2.5 revised 2024). The station feed publishes AQI
+// sub-indices rather than concentrations, so these run in reverse.
+const PM25_BP = [[0,9.0,0,50],[9.1,35.4,51,100],[35.5,55.4,101,150],
+                 [55.5,125.4,151,200],[125.5,225.4,201,300],[225.5,325.4,301,500]];
+const PM10_BP = [[0,54,0,50],[55,154,51,100],[155,254,101,150],
+                 [255,354,151,200],[355,424,201,300],[425,604,301,500]];
+
+function aqiToConc(aqi, bp){
+  if (aqi == null || !isFinite(aqi)) return null;
+  for (const [cLo, cHi, aLo, aHi] of bp) {
+    if (aqi >= aLo && aqi <= aHi) return cLo + (aqi - aLo) * (cHi - cLo) / (aHi - aLo);
+  }
+  return aqi > 500 ? bp[bp.length-1][1] : null;
+}
+
+// Malaysia DOE sub-indices, both on a 24-hour average (µg/m³)
 function myPM25(c){
   if (c == null || !isFinite(c)) return null;
   if (c <= 12.0)  return 4.1667 * c;
@@ -438,7 +470,6 @@ function myPM25(c){
   if (c <= 500.4) return 0.6604 * (c - 350.5) + 401;
   return 500;
 }
-// Malaysia DOE PM10 sub-index (24-hour average, µg/m³)
 function myPM10(c){
   if (c == null || !isFinite(c)) return null;
   if (c <= 50)  return c;
@@ -451,8 +482,6 @@ function myPM10(c){
 const COMPASS = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 function compass(deg){ return COMPASS[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
 
-// The bearing sector that points back at Sumatra differs by region:
-// from the Klang Valley it lies SW–WNW; from Penang it lies S–WSW.
 const SUMATRA_ARC = {
   "Klang Valley & Negeri Sembilan": [200, 295],
   "Pulau Pinang": [165, 255]
@@ -465,23 +494,33 @@ function upwindRisk(loc, deg){
   return d >= arc[0] && d <= arc[1];
 }
 
+function haversine(aLat, aLon, bLat, bLon){
+  const R = 6371, rad = Math.PI / 180;
+  const dLat = (bLat - aLat) * rad, dLon = (bLon - aLon) * rad;
+  const s = Math.sin(dLat/2)**2 + Math.cos(aLat*rad) * Math.cos(bLat*rad) * Math.sin(dLon/2)**2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+
 function fmt(n, dp){ return (n == null || !isFinite(n)) ? "–" : n.toFixed(dp == null ? 0 : dp); }
-function hhmm(iso){ return iso ? iso.slice(11,16) : ""; }
-function dayLabel(iso){
-  const d = new Date(iso + ":00");
-  return d.toLocaleDateString(undefined, { weekday:"short" }) + " " + iso.slice(11,16);
+function todayISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function dayName(iso){
+  const d = new Date(iso + "T12:00:00");
+  return isNaN(d) ? iso.slice(5) : d.toLocaleDateString(undefined, { weekday:"short" });
+}
+function clockOf(isoLike){
+  if (!isoLike) return "";
+  const m = String(isoLike).match(/(\d{2}:\d{2})/);
+  return m ? m[1] : "";
 }
 
 /* ============================ state ============================ */
 
 const state = {
-  rows: [],            // per location: merged data
-  lastOk: null,        // Date of last successful fetch
-  failures: 0,
-  loading: false,
-  view: "now",
-  alert: {},           // id -> { above:bool, last:ts }
-  flashTimer: null,
+  rows: [], lastOk: null, failures: 0, loading: false,
+  view: "now", alert: {}, flashTimer: null,
   baseTitle: "Haze Watch — Malaysia"
 };
 
@@ -492,23 +531,20 @@ function qs(o){ return Object.entries(o).map(([k,v]) => k + "=" + encodeURICompo
 function withTimeout(promise, ms){
   return new Promise((resolve, reject) => {
     const t = setTimeout(() => reject(new Error("timed out after " + Math.round(ms/1000) + "s")), ms);
-    promise.then(v => { clearTimeout(t); resolve(v); },
-                 e => { clearTimeout(t); reject(e); });
+    promise.then(v => { clearTimeout(t); resolve(v); }, e => { clearTimeout(t); reject(e); });
   });
 }
 
-// Deliberately no AbortSignal and no Request object in the fetch init.
-// Some embedded viewers (in-app file previews, sandboxed iframes) proxy fetch
-// through postMessage, and a non-structured-cloneable init argument — an
-// AbortSignal is exactly that — makes the call die with DataCloneError before
-// it ever reaches the network. Timeouts are handled by racing a timer instead.
+// No AbortSignal and no Request object in the fetch init: some embedded viewers
+// proxy fetch through postMessage, and a non-cloneable init argument kills the
+// call with DataCloneError before it reaches the network.
 async function getJSON(url, ms){
   const timeout = ms || 15000;
   const bust = url + (url.includes("?") ? "&" : "?") + "_=" + Date.now();
   const attempts = [
     () => fetch(bust),
     () => fetch(bust, { method: "GET", mode: "cors", credentials: "omit" }),
-    () => new Promise((resolve, reject) => {           // XHR, for shims that break fetch
+    () => new Promise((resolve, reject) => {
       const x = new XMLHttpRequest();
       x.open("GET", bust, true);
       x.onload  = () => resolve({ ok: x.status >= 200 && x.status < 300, status: x.status,
@@ -517,7 +553,6 @@ async function getJSON(url, ms){
       x.send();
     })
   ];
-
   let last;
   for (const attempt of attempts) {
     try {
@@ -532,111 +567,93 @@ async function getJSON(url, ms){
   throw last || new Error("unreachable");
 }
 
-async function refresh(manual){
+async function refresh(){
   if (state.loading) return;
   state.loading = true;
   setLive("checking", "updating…");
 
-  const lats = LOCATIONS.map(l => l.lat).join(",");
-  const lons = LOCATIONS.map(l => l.lon).join(",");
-  const common = { latitude:lats, longitude:lons, timezone:"Asia/Kuala_Lumpur" };
-
-  const aqUrl = AQ_URL + "?" + qs(Object.assign({}, common, {
-    current: "pm2_5,pm10,us_aqi,carbon_monoxide,ozone,nitrogen_dioxide,sulphur_dioxide",
-    hourly:  "pm2_5,pm10,us_aqi",
-    past_days: 2, forecast_days: 2
-  }));
-  const wxUrl = WX_URL + "?" + qs(Object.assign({}, common, {
-    current: "temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,visibility"
-  }));
+  const wxUrl = WX_URL + "?" + qs({
+    latitude:  LOCATIONS.map(l => l.lat).join(","),
+    longitude: LOCATIONS.map(l => l.lon).join(","),
+    timezone:  "Asia/Kuala_Lumpur",
+    current:   "temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation,visibility"
+  });
 
   try {
-    const [aqRes, wxRes] = await Promise.all([ getJSON(aqUrl), getJSON(wxUrl) ]);
-    const aq = Array.isArray(aqRes) ? aqRes : [aqRes];
-    const wx = Array.isArray(wxRes) ? wxRes : [wxRes];
+    const [feeds, wxRes] = await Promise.all([
+      Promise.all(LOCATIONS.map(l =>
+        getJSON(WAQI_URL + l.uid + "/?token=" + WAQI_TOKEN).catch(e => ({ status:"error", _err:e })))),
+      getJSON(wxUrl).catch(e => { console.warn("[hazewatch] weather unavailable:", e); return null; })
+    ]);
 
-    state.rows = LOCATIONS.map((loc, i) => buildRow(loc, i, aq[i], wx[i]));
+    const wx = wxRes ? (Array.isArray(wxRes) ? wxRes : [wxRes]) : [];
+    const rows = LOCATIONS.map((loc, i) => buildRow(loc, i, feeds[i], wx[i]));
+
+    if (!rows.some(r => r.ok)) throw (feeds.find(f => f && f._err) || {})._err || new Error("no station returned data");
+
+    state.rows = rows;
     state.lastOk = new Date();
     state.failures = 0;
     render();
     checkAlerts();
   } catch (err) {
     state.failures++;
-    console.warn("[hazewatch] fetch failed:", err);
+    console.warn("[hazewatch] refresh failed:", err);
     renderBanner(err);
     setLive(state.rows.length ? "stale" : "down",
-            state.rows.length ? "offline — showing last reading" : "can't reach data source");
+            state.rows.length ? "offline — showing last reading" : "can't reach the stations");
   } finally {
     state.loading = false;
     resetTimer();
   }
 }
 
-function buildRow(loc, i, aq, wx){
-  const row = { ...loc, color: SERIES[i % SERIES.length] };
-  if (!aq || !aq.current || !aq.hourly) return Object.assign(row, { ok:false });
+function buildRow(loc, i, feed, wx){
+  const row = Object.assign({}, loc, { color: SERIES[i % SERIES.length], wx: wx && wx.current ? wx.current : null });
+  if (!feed || feed.status !== "ok" || !feed.data) return Object.assign(row, { ok:false });
 
-  const H = aq.hourly;
-  const times = H.time || [];
-  let now = times.indexOf(aq.current.time);
-  if (now < 0) {
-    // fall back to the nearest past hour
-    const stamp = aq.current.time;
-    now = times.reduce((best, t, k) => (t <= stamp ? k : best), 0);
-  }
+  const d = feed.data;
+  const aqi = Math.round(d.aqi);
+  if (!isFinite(aqi)) return Object.assign(row, { ok:false });
 
-  const from = Math.max(0, now - 24);
-  const to   = Math.min(times.length - 1, now + 24);
+  const iaqi = d.iaqi || {};
+  const pm25 = aqiToConc(iaqi.pm25 && iaqi.pm25.v, PM25_BP);
+  const pm10 = aqiToConc(iaqi.pm10 && iaqi.pm10.v, PM10_BP);
 
-  const slice = (arr) => (arr || []).slice(from, to + 1).map(v => (v == null ? null : +v));
-  const series = {
-    time: times.slice(from, to + 1),
-    aqi:  slice(H.us_aqi),
-    pm25: slice(H.pm2_5),
-    pm10: slice(H.pm10),
-    nowIdx: now - from
-  };
+  const geo = (d.city && d.city.geo) || [];
+  const station = (d.city && d.city.name) || "station " + loc.uid;
+  const km = geo.length === 2 ? haversine(loc.lat, loc.lon, geo[0], geo[1]) : null;
 
-  // trailing 24-hour means drive the Malaysian sub-indices
-  const mean = (arr) => {
-    const v = arr.filter(x => x != null && isFinite(x));
-    return v.length ? v.reduce((a,b) => a + b, 0) / v.length : null;
-  };
-  const past25 = { pm25: (H.pm2_5 || []).slice(Math.max(0, now - 23), now + 1).map(Number),
-                   pm10: (H.pm10  || []).slice(Math.max(0, now - 23), now + 1).map(Number) };
-  const sub25 = myPM25(mean(past25.pm25));
-  const sub10 = myPM10(mean(past25.pm10));
+  // Daily outlook, in AQI units, from today onward
+  const daily = ((d.forecast || {}).daily || {}).pm25 || [];
+  const today = todayISO();
+  const outlook = daily
+    .filter(x => x.day >= today)
+    .slice(0, 5)
+    .map(x => ({ day: x.day, avg: Math.round(x.avg), min: Math.round(x.min), max: Math.round(x.max) }));
+
+  // Malaysia's API runs on a 24-hour average, so today's daily mean is the
+  // right input — not the current hour.
+  const todayAvgAqi = outlook.length && outlook[0].day === today ? outlook[0].avg : null;
+  const avg25 = todayAvgAqi != null ? aqiToConc(todayAvgAqi, PM25_BP) : pm25;
+  const sub25 = myPM25(avg25);
+  const sub10 = myPM10(pm10);
   const myApi = (sub25 == null && sub10 == null) ? null
               : Math.round(Math.max(sub25 == null ? 0 : sub25, sub10 == null ? 0 : sub10));
 
-  const aqiNow = Math.round(aq.current.us_aqi);
-  const prev3  = series.aqi[series.nowIdx - 3];
-  const delta  = (prev3 == null) ? null : aqiNow - Math.round(prev3);
-
-  // peak in the next 24h of forecast
-  const fwd = series.aqi.slice(series.nowIdx + 1);
-  const peak = fwd.length ? Math.max(...fwd.filter(v => v != null)) : null;
-  const peakAt = peak == null ? null : series.time[series.nowIdx + 1 + fwd.indexOf(peak)];
+  const vsAvg = todayAvgAqi != null ? aqi - todayAvgAqi : null;
+  const tomorrow = outlook.length > 1 ? outlook[1] : null;
 
   return Object.assign(row, {
-    ok: true,
-    obsTime: aq.current.time,
-    aqi: aqiNow,
-    pm25: aq.current.pm2_5,
-    pm10: aq.current.pm10,
-    o3: aq.current.ozone, no2: aq.current.nitrogen_dioxide,
-    so2: aq.current.sulphur_dioxide, co: aq.current.carbon_monoxide,
-    myApi, myApiPM25: sub25, myApiPM10: sub10,
-    delta, series, peak: peak == null ? null : Math.round(peak), peakAt,
-    wx: wx && wx.current ? wx.current : null
+    ok: true, aqi, pm25, pm10, myApi, station, km, outlook, todayAvgAqi, vsAvg, tomorrow,
+    obsTime: (d.time && (d.time.s || d.time.iso)) || "",
+    source: (d.attributions || []).map(a => a.name).join(" · ")
   });
 }
 
 /* ============================ rendering ============================ */
 
 const $ = (s) => document.querySelector(s);
-
-function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
 
 function ordered(){
   const rows = state.rows.filter(r => r.ok);
@@ -664,9 +681,9 @@ function renderBanner(err){
   if (err) {
     b.dataset.sev = "error";
     $("#bIcon").textContent = "⚠";
-    $("#bTitle").textContent = "Couldn't reach the data source";
+    $("#bTitle").textContent = "Couldn't reach the monitoring stations";
     const why = err.name === "DataCloneError"
-      ? "This page is running inside a sandboxed preview that blocks outbound requests. Open the file in a normal browser window, or use the hosted link."
+      ? "This page is running inside a sandboxed preview that blocks outbound requests. Open it in a normal browser window."
       : /Failed to fetch|NetworkError|network error/i.test(err.message || "")
         ? "The request was blocked or the network is down."
         : (err.name + ": " + err.message);
@@ -678,9 +695,9 @@ function renderBanner(err){
   const rows = state.rows.filter(r => r.ok);
   if (!rows.length) return;
 
-  const over = rows.filter(r => r.aqi >= S.thresh).sort((a,b) => b.aqi - a.aqi);
+  const over  = rows.filter(r => r.aqi >= S.thresh).sort((a,b) => b.aqi - a.aqi);
   const worst = rows.slice().sort((a,b) => b.aqi - a.aqi)[0];
-  const rising = rows.filter(r => r.delta != null && r.delta >= 10).sort((a,b) => b.delta - a.delta);
+  const climbing = rows.filter(r => r.vsAvg != null && r.vsAvg >= 10).sort((a,b) => b.vsAvg - a.vsAvg);
 
   if (over.length) {
     b.dataset.sev = "alert";
@@ -689,13 +706,11 @@ function renderBanner(err){
       ? over[0].name + " is at US AQI " + over[0].aqi + " — " + band(over[0].aqi).label
       : over.length + " locations above AQI " + S.thresh + " — worst is " + over[0].name + " at " + over[0].aqi;
     $("#bBody").textContent = over.map(r => r.name + " " + r.aqi).join(" · ")
-      + (worst.peak != null && worst.peak > worst.aqi
-          ? " · " + worst.name + " forecast to peak near " + worst.peak + " around " + hhmm(worst.peakAt)
-          : "");
-  } else if (rising.length) {
+      + (worst.tomorrow ? " · " + worst.name + " forecast to average " + worst.tomorrow.avg + " tomorrow" : "");
+  } else if (climbing.length) {
     b.dataset.sev = "watch";
     $("#bIcon").textContent = "▲";
-    $("#bTitle").textContent = "Rising — " + rising[0].name + " up " + rising[0].delta + " in 3 hours (now " + rising[0].aqi + ")";
+    $("#bTitle").textContent = "Climbing — " + climbing[0].name + " is " + climbing[0].vsAvg + " above today's average";
     $("#bBody").textContent = "Nothing above your alert level of " + S.thresh + " yet. Worst right now: "
       + worst.name + " at " + worst.aqi + " (" + band(worst.aqi).label + ").";
   } else {
@@ -711,7 +726,6 @@ function renderCards(){
   const host = $("#groups");
   const rows = ordered();
   let html = "";
-
   const sections = S.sort
     ? [{ label: "All locations — worst first", rows }]
     : AREAS.map(a => ({ label: a, rows: rows.filter(r => r.area === a) }));
@@ -722,8 +736,12 @@ function renderCards(){
     for (const r of sec.rows) html += card(r);
     html += '</div>';
   }
+  const dead = state.rows.filter(r => !r.ok);
+  if (dead.length) {
+    html += '<div class="group-label">Not reporting</div><div class="panel" style="padding:14px 16px;font-size:13.5px;color:var(--ink-2)">'
+          + esc(dead.map(r => r.name).join(", ")) + ' — the station is offline or returned no data. Everything else is current.</div>';
+  }
   host.innerHTML = html;
-  host.querySelectorAll("[data-spark]").forEach(el => wireSpark(el));
 }
 
 function card(r){
@@ -732,8 +750,8 @@ function card(r){
   const deg = w.wind_direction_10m;
   const dir = deg == null ? null : compass(deg);
   const risky = upwindRisk(r, deg);
-  const trend = r.delta == null ? "–"
-    : (r.delta > 0 ? "▲ +" + r.delta : r.delta < 0 ? "▼ " + r.delta : "– steady");
+  const trend = r.vsAvg == null ? "–"
+    : (r.vsAvg > 0 ? "▲ +" + r.vsAvg : r.vsAvg < 0 ? "▼ " + r.vsAvg : "– level");
 
   return `
   <article class="card" style="--band:var(${b.bg}); --band-fg:var(${b.fg})">
@@ -746,15 +764,17 @@ function card(r){
         </div>
         <div class="aqi-wrap">
           <div class="aqi-num">${r.aqi}</div>
-          <div class="aqi-cap">US AQI</div>
-          <div class="trend" style="justify-content:flex-end">${trend}<span style="color:var(--muted)">3h</span></div>
+          <div class="aqi-cap">US AQI · measured</div>
+          <div class="trend" style="justify-content:flex-end">${trend}<span style="color:var(--muted)">vs today avg</span></div>
         </div>
       </div>
 
-      <div class="spark" data-spark="${r.id}">
-        ${sparkSVG(r)}
-        <div class="spark-ax"><span>${hhmm(r.series.time[0])} yest.</span><span>now</span><span>+24h</span></div>
+      <div class="via" title="The nearest Department of Environment monitoring station">
+        <span class="dotmark" aria-hidden="true"></span>
+        ${esc(stationShort(r.station))}${r.km != null ? " · " + r.km.toFixed(1) + " km away" : ""}${r.obsTime ? " · read " + esc(clockOf(r.obsTime)) : ""}
       </div>
+
+      ${outlookStrip(r)}
     </div>
 
     <div class="stats">
@@ -769,113 +789,51 @@ function card(r){
         <path d="M12 3 L12 21 M12 3 L7.5 8.5 M12 3 L16.5 8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <span class="w1"><b>from ${esc(dir)}</b> · ${fmt(w.wind_speed_10m,0)} km/h</span>
-      ${risky ? '<span class="track" title="Wind is arriving from the south-west-to-west sector — the direction transboundary smoke from Sumatra travels on">Sumatra track</span>' : ''}`}
-      <span class="w2" title="Modelled horizontal visibility">${w.visibility != null ? (w.visibility/1000).toFixed(1) + " km vis" : ""}</span>
+      ${risky ? '<span class="track" title="Wind is arriving from the sector that points back at Sumatra — the direction transboundary smoke travels on">Sumatra track</span>' : ''}`}
+      <span class="w2">${w.visibility != null ? (w.visibility/1000).toFixed(1) + " km vis" : ""}</span>
     </div>
   </article>`;
 }
 
-/* ---------- sparkline (one series, non-scaling stroke) ---------- */
-
-const SW = 300, SH = 62, SPAD = 4;
-
-function sparkSVG(r){
-  const a = r.series.aqi;
-  const vals = a.filter(v => v != null);
-  if (!vals.length) return '<svg viewBox="0 0 300 62"></svg>';
-
-  const hi = Math.max(200, Math.ceil(Math.max(...vals) / 50) * 50);
-  const x = (i) => SPAD + i * (SW - 2*SPAD) / Math.max(1, a.length - 1);
-  const y = (v) => SH - SPAD - (v / hi) * (SH - 2*SPAD);
-
-  const n = r.series.nowIdx;
-  const path = (from, to) => {
-    let d = "", pen = false;
-    for (let i = from; i <= to; i++) {
-      const v = a[i]; if (v == null) { pen = false; continue; }
-      d += (pen ? "L" : "M") + x(i).toFixed(2) + " " + y(v).toFixed(2) + " ";
-      pen = true;
-    }
-    return d.trim();
-  };
-
-  const area = (() => {
-    let d = "M" + x(0).toFixed(2) + " " + (SH - SPAD);
-    for (let i = 0; i <= n; i++) if (a[i] != null) d += "L" + x(i).toFixed(2) + " " + y(a[i]).toFixed(2);
-    return d + "L" + x(n).toFixed(2) + " " + (SH - SPAD) + "Z";
-  })();
-
-  const refs = [100, 150].filter(v => v < hi).map(v =>
-    `<line x1="0" y1="${y(v).toFixed(2)}" x2="${SW}" y2="${y(v).toFixed(2)}" stroke="var(--grid)" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>`
-  ).join("");
-
-  const gid = "g-" + r.id;
-  return `
-  <svg viewBox="0 0 ${SW} ${SH}" preserveAspectRatio="none" role="img"
-       aria-label="Hourly US AQI for ${esc(r.name)}, past 24 hours and next 24 hours">
-    <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="var(--band)" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="var(--band)" stop-opacity="0.02"/>
-    </linearGradient></defs>
-    ${refs}
-    <path d="${area}" fill="url(#${gid})"/>
-    <path d="${path(0, n)}" fill="none" stroke="var(--band)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-    <path d="${path(n, a.length-1)}" fill="none" stroke="var(--band)" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" opacity="0.6" vector-effect="non-scaling-stroke"/>
-    <line x1="${x(n).toFixed(2)}" y1="0" x2="${x(n).toFixed(2)}" y2="${SH}" stroke="var(--axis)" stroke-width="1" vector-effect="non-scaling-stroke"/>
-    <circle cx="${x(n).toFixed(2)}" cy="${y(a[n] == null ? 0 : a[n]).toFixed(2)}" r="3.2"
-            fill="var(--band)" stroke="var(--surface)" stroke-width="2" vector-effect="non-scaling-stroke"/>
-    <g class="hover" opacity="0">
-      <line class="hx" y1="0" y2="${SH}" stroke="var(--ink-2)" stroke-width="1" vector-effect="non-scaling-stroke"/>
-      <circle class="hd" r="3.6" fill="var(--band)" stroke="var(--surface)" stroke-width="2" vector-effect="non-scaling-stroke"/>
-    </g>
-  </svg>`;
+function stationShort(name){
+  // "Batu Muda,Kuala Lumpur, Wilayah Persekutuan, Malaysia" → "Batu Muda, Kuala Lumpur"
+  const parts = String(name).replace(/,\s*Malaysia\s*$/i, "").split(",").map(s => s.trim()).filter(Boolean);
+  return parts.slice(0, 2).join(", ");
 }
 
-function wireSpark(el){
-  const id = el.dataset.spark;
-  const r = state.rows.find(v => v.id === id);
-  if (!r) return;
-  const svg = el.querySelector("svg");
-  const hover = svg.querySelector(".hover");
-  const hx = svg.querySelector(".hx"), hd = svg.querySelector(".hd");
-  const a = r.series.aqi;
-
-  const hi = (() => {
-    const vals = a.filter(v => v != null);
-    return Math.max(200, Math.ceil(Math.max(...vals) / 50) * 50);
-  })();
-  const xAt = (i) => SPAD + i * (SW - 2*SPAD) / Math.max(1, a.length - 1);
-  const yAt = (v) => SH - SPAD - (v / hi) * (SH - 2*SPAD);
-
-  function move(ev){
-    const bb = svg.getBoundingClientRect();
-    const t = Math.min(1, Math.max(0, (ev.clientX - bb.left) / bb.width));
-    const i = Math.round(t * (a.length - 1));
-    if (a[i] == null) return;
-    hover.setAttribute("opacity", "1");
-    hx.setAttribute("x1", xAt(i)); hx.setAttribute("x2", xAt(i));
-    hd.setAttribute("cx", xAt(i)); hd.setAttribute("cy", yAt(a[i]));
-    const future = i > r.series.nowIdx;
-    showTip(ev, `<div class="tt">${esc(dayLabel(r.series.time[i]))}${future ? " · forecast" : ""}</div>
-      <div class="tr"><span class="nm"><span class="sw" style="background:var(--band)"></span>US AQI</span><b>${Math.round(a[i])}</b></div>
-      <div class="tr"><span class="nm" style="padding-left:16px">PM2.5</span><b>${fmt(r.series.pm25[i],1)}</b></div>
-      <div class="tr"><span class="nm" style="padding-left:16px">PM10</span><b>${fmt(r.series.pm10[i],1)}</b></div>`);
-  }
-  el.addEventListener("pointermove", move);
-  el.addEventListener("pointerleave", () => { hover.setAttribute("opacity","0"); hideTip(); });
+function outlookStrip(r){
+  if (!r.outlook || !r.outlook.length) return '<div class="outlook empty">No daily outlook for this station.</div>';
+  const hi = Math.max(120, ...r.outlook.map(d => d.max));
+  return '<div class="outlook">'
+    + '<div class="ol-cap">Daily outlook · bar = average, line = range</div>'
+    + '<div class="ol-row">'
+    + r.outlook.map((d, i) => {
+        const bb = band(d.avg);
+        const h   = Math.max(6, Math.round(d.avg / hi * 46));
+        const lo  = Math.round(d.min / hi * 46);
+        const rng = Math.max(3, Math.round((d.max - d.min) / hi * 46));
+        return `<div class="ol" title="${esc(dayName(d.day))} — average ${d.avg}, range ${d.min} to ${d.max}">
+          <div class="ol-bar" style="height:46px">
+            <div class="ol-fill" style="height:${h}px; background:var(${bb.bg})"></div>
+            <div class="ol-rng" style="height:${rng}px; bottom:${lo}px"></div>
+          </div>
+          <div class="ol-v">${d.avg}</div>
+          <div class="ol-d">${i === 0 ? "Today" : esc(dayName(d.day))}</div>
+        </div>`;
+      }).join("")
+    + '</div></div>';
 }
 
-/* ---------- compare chart (multi-series, measured width) ---------- */
+/* ---------- compare chart: daily outlook, all locations ---------- */
 
 const CM = { top:16, right:88, bottom:26, left:40 };
 
 function renderCompare(){
-  const svg = $("#cmp");
-  const rows = state.rows.filter(r => r.ok && !S.hidden.includes(r.id));
-  const all  = state.rows.filter(r => r.ok);
+  const svg  = $("#cmp");
+  const all  = state.rows.filter(r => r.ok && r.outlook && r.outlook.length);
+  const rows = all.filter(r => !S.hidden.includes(r.id));
   if (!all.length) return;
 
-  // legend first — it must exist even when everything is hidden
   $("#legend").innerHTML = all.map(r =>
     `<span class="lg" data-lg="${r.id}" data-off="${S.hidden.includes(r.id) ? 1 : 0}" role="button" tabindex="0">
        <span class="sw" style="background:var(${r.color})"></span>${esc(r.name)}</span>`).join("");
@@ -894,21 +852,18 @@ function renderCompare(){
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   svg.setAttribute("height", H);
 
-  // On a narrow screen the direct end labels won't fit; the legend carries identity there.
   const showEnds = W >= 620;
   const RIGHT = showEnds ? CM.right : 14;
 
-  const ref = all[0].series;
-  const N = ref.time.length, nowIdx = ref.nowIdx;
-  const vals = rows.flatMap(r => r.series.aqi).filter(v => v != null);
+  const days = all[0].outlook.map(d => d.day);
+  const N = days.length;
+  const vals = rows.flatMap(r => r.outlook.map(d => d.avg)).filter(v => v != null);
   const hi = Math.max(200, Math.ceil((vals.length ? Math.max(...vals) : 200) / 50) * 50);
 
   const x = (i) => CM.left + i * (W - CM.left - RIGHT) / Math.max(1, N - 1);
   const y = (v) => CM.top + (1 - v / hi) * (H - CM.top - CM.bottom);
 
   let g = "";
-
-  // AQI category bands as faint background rules + y axis
   const ticks = [];
   for (let v = 0; v <= hi; v += (hi > 300 ? 100 : 50)) ticks.push(v);
   g += ticks.map(v =>
@@ -916,7 +871,6 @@ function renderCompare(){
      <text x="${CM.left - 8}" y="${(y(v)+4).toFixed(1)}" text-anchor="end" font-size="10.5" fill="var(--muted)">${v}</text>`
   ).join("");
 
-  // threshold line — labelled on the left so it never fights the end labels
   if (S.thresh <= hi) {
     g += `<line x1="${CM.left}" y1="${y(S.thresh).toFixed(1)}" x2="${W - RIGHT}" y2="${y(S.thresh).toFixed(1)}"
             stroke="var(--b-unh)" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.75"/>
@@ -924,40 +878,27 @@ function renderCompare(){
                 stroke="var(--surface)" stroke-width="3" paint-order="stroke" stroke-linejoin="round">alert level ${S.thresh}</text>`;
   }
 
-  // x ticks — thinned out on narrow screens so the labels never run together
-  const tickStep = W >= 820 ? 6 : W >= 560 ? 8 : 12;
-  for (let i = 0; i < N; i += tickStep) {
-    g += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${hhmm(ref.time[i])}</text>`;
+  for (let i = 0; i < N; i++) {
+    g += `<text x="${x(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${i === 0 ? "Today" : esc(dayName(days[i]))}</text>`;
   }
 
-  // now divider
-  g += `<line x1="${x(nowIdx).toFixed(1)}" y1="${CM.top - 6}" x2="${x(nowIdx).toFixed(1)}" y2="${H - CM.bottom}" stroke="var(--axis)" stroke-width="1.5"/>
-        <text x="${(x(nowIdx)+5).toFixed(1)}" y="${CM.top - 1}" font-size="10.5" fill="var(--muted)"
-              stroke="var(--surface)" stroke-width="3" paint-order="stroke" stroke-linejoin="round">now</text>`;
-
-  // series
   const endLabels = [];
   for (const r of rows) {
-    const a = r.series.aqi;
-    const seg = (from, to) => {
-      let d = "", pen = false;
-      for (let i = from; i <= to && i < a.length; i++) {
-        if (a[i] == null) { pen = false; continue; }
-        d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(a[i]).toFixed(1) + " ";
-        pen = true;
-      }
-      return d.trim();
-    };
-    g += `<path d="${seg(0, nowIdx)}" fill="none" stroke="var(${r.color})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
-    g += `<path d="${seg(nowIdx, a.length-1)}" fill="none" stroke="var(${r.color})" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round" opacity="0.65"/>`;
+    const a = r.outlook.map(d => d.avg);
+    let d = "", pen = false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] == null) { pen = false; continue; }
+      d += (pen ? "L" : "M") + x(i).toFixed(1) + " " + y(a[i]).toFixed(1) + " ";
+      pen = true;
+    }
+    g += `<path d="${d.trim()}" fill="none" stroke="var(${r.color})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] != null) g += `<circle cx="${x(i).toFixed(1)}" cy="${y(a[i]).toFixed(1)}" r="3.2" fill="var(${r.color})" stroke="var(--surface)" stroke-width="1.5"/>`;
+    }
     const last = a.length - 1;
     if (a[last] != null) endLabels.push({ y: y(a[last]), text: r.short, color: r.color });
-    if (a[nowIdx] != null) {
-      g += `<circle cx="${x(nowIdx).toFixed(1)}" cy="${y(a[nowIdx]).toFixed(1)}" r="3.6" fill="var(${r.color})" stroke="var(--surface)" stroke-width="2"/>`;
-    }
   }
 
-  // direct end labels (the relief for light-mode contrast), pushed apart so none collide
   if (showEnds) {
     const GAP = 13, topY = CM.top + 4, botY = H - CM.bottom;
     endLabels.sort((p, q) => p.y - q.y);
@@ -974,7 +915,6 @@ function renderCompare(){
 
   g += `<g class="chover" opacity="0"><line class="chx" y1="${CM.top}" y2="${H - CM.bottom}" stroke="var(--ink-2)" stroke-width="1"/></g>`;
   g += `<rect x="${CM.left}" y="${CM.top}" width="${W - CM.left - RIGHT}" height="${H - CM.top - CM.bottom}" fill="transparent" class="chit"/>`;
-
   svg.innerHTML = g;
 
   const hov = svg.querySelector(".chover"), chx = svg.querySelector(".chx");
@@ -986,12 +926,12 @@ function renderCompare(){
     hov.setAttribute("opacity", "1");
     chx.setAttribute("x1", x(i)); chx.setAttribute("x2", x(i));
     const lines = rows
-      .map(r => ({ r, v: r.series.aqi[i] }))
-      .filter(o => o.v != null)
-      .sort((p,q) => q.v - p.v)
-      .map(o => `<div class="tr"><span class="nm"><span class="sw" style="background:var(${o.r.color})"></span>${esc(o.r.name)}</span><b>${Math.round(o.v)}</b></div>`)
+      .map(r => ({ r, d: r.outlook[i] }))
+      .filter(o => o.d)
+      .sort((p,q) => q.d.avg - p.d.avg)
+      .map(o => `<div class="tr"><span class="nm"><span class="sw" style="background:var(${o.r.color})"></span>${esc(o.r.name)}</span><b>${o.d.avg}</b></div>`)
       .join("");
-    showTip(ev, `<div class="tt">${esc(dayLabel(ref.time[i]))}${i > nowIdx ? " · forecast" : ""}</div>${lines}`);
+    showTip(ev, `<div class="tt">${i === 0 ? "Today" : esc(dayName(days[i]))} · daily average</div>${lines}`);
   });
   svg.querySelector(".chit").addEventListener("pointerleave", () => { hov.setAttribute("opacity","0"); hideTip(); });
 }
@@ -1004,13 +944,14 @@ function renderTable(){
     const d = w.wind_direction_10m;
     return `<tr>
       <td>${esc(r.name)}</td>
+      <td style="font-variant-numeric:normal;color:var(--ink-2)">${esc(stationShort(r.station))}${r.km != null ? " (" + r.km.toFixed(1) + " km)" : ""}</td>
       <td><b>${r.aqi}</b></td>
       <td><span class="tag" style="background:var(${b.bg}); color:var(${b.fg})">${esc(b.label)}</span></td>
       <td>${fmt(r.pm25,1)}</td>
       <td>${fmt(r.pm10,1)}</td>
       <td>${r.myApi == null ? "–" : r.myApi + " · " + esc(myBand(r.myApi))}</td>
+      <td>${r.tomorrow ? r.tomorrow.avg : "–"}</td>
       <td>${d == null ? "–" : esc(compass(d)) + " " + fmt(w.wind_speed_10m,0) + " km/h"}</td>
-      <td>${r.delta == null ? "–" : (r.delta > 0 ? "+" : "") + r.delta}</td>
     </tr>`;
   }).join("");
 }
@@ -1041,18 +982,14 @@ function checkAlerts(){
     if (above && (!st.above || now - st.last > 3600000)) { fired.push(r); st.last = now; }
     st.above = above;
   }
-  const anyAbove = state.rows.some(r => r.ok && r.aqi >= S.thresh);
-  flashTitle(anyAbove);
+  flashTitle(state.rows.some(r => r.ok && r.aqi >= S.thresh));
   if (!fired.length) return;
 
   const worst = fired.sort((a,b) => b.aqi - a.aqi)[0];
   const body = fired.map(r => r.name + " " + r.aqi + " (" + band(r.aqi).label + ")").join("\n");
-
   if ("Notification" in window && Notification.permission === "granted") {
     try {
-      new Notification("Haze alert — " + worst.name + " AQI " + worst.aqi, {
-        body, tag: "hazewatch", renotify: true
-      });
+      new Notification("Haze alert — " + worst.name + " AQI " + worst.aqi, { body, tag: "hazewatch", renotify: true });
     } catch (e) { console.warn("[hazewatch] notification blocked:", e); }
   }
   if (S.chime) chime();
@@ -1065,10 +1002,7 @@ function flashTitle(on){
   const msg = "⚠ " + worst.aqi + " " + worst.name;
   let flip = false;
   document.title = msg;
-  state.flashTimer = setInterval(() => {
-    flip = !flip;
-    document.title = flip ? state.baseTitle : msg;
-  }, 2500);
+  state.flashTimer = setInterval(() => { flip = !flip; document.title = flip ? state.baseTitle : msg; }, 2500);
 }
 
 let audioCtx = null;
@@ -1091,11 +1025,8 @@ function chime(){
 
 /* ============================ timer & chrome ============================ */
 
-let tickTimer = null, nextAt = 0;
-
-function resetTimer(){
-  nextAt = Date.now() + S.every * 60000;
-}
+let nextAt = 0;
+function resetTimer(){ nextAt = Date.now() + S.every * 60000; }
 function tick(){
   if (state.loading) return;
   const left = Math.max(0, nextAt - Date.now());
@@ -1105,13 +1036,10 @@ function tick(){
     setLive("ok", "next in " + (m ? m + "m " : "") + String(s).padStart(m ? 2 : 1, "0") + "s");
   }
 }
-
 function setLive(kind, text){
-  const d = $("#dot");
-  d.className = "dot" + (kind === "ok" ? " pulse" : kind === "stale" ? " stale" : kind === "down" ? " down" : " pulse");
+  $("#dot").className = "dot" + (kind === "ok" ? " pulse" : kind === "stale" ? " stale" : kind === "down" ? " down" : " pulse");
   $("#liveTxt").textContent = text;
 }
-
 function setView(v){
   state.view = v;
   $("#tabNow").setAttribute("aria-selected", v === "now");
@@ -1120,12 +1048,10 @@ function setView(v){
   $("#viewCmp").classList.toggle("hide", v !== "cmp");
   if (v === "cmp") renderCompare();
 }
-
 function applyTheme(){
   document.documentElement.setAttribute("data-theme", S.theme);
   if (state.rows.length) { renderCards(); renderCompare(); }
 }
-
 function esc(s){
   return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
     ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -1164,12 +1090,13 @@ applyTheme();
 
 $("#tabNow").addEventListener("click", () => setView("now"));
 $("#tabCmp").addEventListener("click", () => setView("cmp"));
-$("#btnRefresh").addEventListener("click", () => { resetTimer(); refresh(true); });
+$("#btnRefresh").addEventListener("click", () => { resetTimer(); refresh(); });
 $("#btnTheme").addEventListener("click", () => {
   S.theme = S.theme === "dark" ? "light" : S.theme === "light" ? "auto" : "dark";
   saveSettings(); applyTheme();
 });
 $("#btnSet").addEventListener("click", () => { syncDialog(); $("#dlg").showModal(); });
+$("#setClose").addEventListener("click", () => $("#dlg").close());
 
 let toastTimer = null;
 function toast(msg){
@@ -1186,20 +1113,16 @@ $("#btnShare").addEventListener("click", async () => {
   const text = worst
     ? "Haze Watch — " + worst.name + " is at US AQI " + worst.aqi + " (" + band(worst.aqi).label + ")"
     : "Live air quality for the Klang Valley and Penang";
-  if (location.protocol === "file:") {
-    toast("Host this page to share it — see the README");
-    return;
-  }
+  if (location.protocol === "file:") { toast("Host this page to share it — see the README"); return; }
   try {
     if (navigator.share) { await navigator.share({ title: "Haze Watch — Malaysia", text, url }); return; }
     await navigator.clipboard.writeText(url);
     toast("Link copied");
   } catch (e) {
-    if (e && e.name === "AbortError") return;   // user dismissed the share sheet
+    if (e && e.name === "AbortError") return;
     toast(url);
   }
 });
-$("#setClose").addEventListener("click", () => $("#dlg").close());
 
 $("#setEvery").addEventListener("change", e => { S.every = +e.target.value; saveSettings(); resetTimer(); });
 $("#setThresh").addEventListener("change", e => {
@@ -1214,7 +1137,7 @@ $("#setNotif").addEventListener("click", async () => {
 });
 $("#setChime").addEventListener("click", () => {
   S.chime = !S.chime; saveSettings(); syncDialog();
-  if (S.chime) chime();                       // also unlocks audio on this gesture
+  if (S.chime) chime();
 });
 $("#setSort").addEventListener("click", () => {
   S.sort = !S.sort; saveSettings(); syncDialog();
@@ -1232,7 +1155,7 @@ document.addEventListener("visibilitychange", () => {
 
 resetTimer();
 refresh();
-tickTimer = setInterval(tick, 1000);
+setInterval(tick, 1000);
 </script>
 </body>
 </html>
